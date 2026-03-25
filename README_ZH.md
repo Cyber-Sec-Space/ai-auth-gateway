@@ -41,6 +41,18 @@ npm install
 npm run build
 ```
 
+### 4. 系統更新 (System Update)
+若您是透過 NPM 全域安裝，可透過以下指令將系統升級至最新版本：
+```bash
+npm update -g @cyber-sec.space/ai-auth-gateway
+```
+若您是從原始碼部署，請拉取最新程式碼後重新編譯：
+```bash
+git pull
+npm install
+npm run build
+```
+
 ---
 
 ## ⚙️ 基本設定與使用
@@ -59,6 +71,7 @@ npm start
 
 **方式一：透過 STDIO 橋接 (適用於 Claude Desktop 或 Cursor 本機代理)**
 如果您希望 AI 客戶端直接在內部喚醒 Gateway，而不需要在背景執行 Daemon，請在客戶端設定中指向編譯好的 `stdio.js`：
+*(💡 提示：您可以隨時在終端機輸入 `sudo npx aagcli stdio-path` 來取得該檔案的真實絕對路徑)*
 ```json
 {
   "mcpServers": {
@@ -150,6 +163,13 @@ sudo npx aagcli mcp list
 
 # 呼叫並陳列 `github_mcp` 上所有可供執行的工具與中文/英文功能描述
 sudo npx aagcli mcp tools github_mcp
+```
+
+### 5. 輔助工具指令 (Utility)
+當您需要讓本機上的 AI 客戶端 (如 Cursor, Claude Desktop) 透過 `stdio` 方式直接喚醒 Proxy 時，可以用此指令快速取得編譯好的代理啟動路徑，方便複製貼上到各種設定檔中。
+```bash
+# 取得本機 stdio 代理執行檔的絕對路徑
+sudo npx aagcli stdio-path
 ```
 
 ---

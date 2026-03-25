@@ -26,6 +26,7 @@ async function main() {
   });
 
   const app = express();
+  app.disable("x-powered-by");
   app.use(cors());
 
   const transports = new Map<string, SSEServerTransport>();

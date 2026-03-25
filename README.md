@@ -41,6 +41,18 @@ npm install
 npm run build
 ```
 
+### 4. Updating the Gateway
+If you installed the gateway globally via NPM, you can update it to the latest version by running:
+```bash
+npm update -g @cyber-sec.space/ai-auth-gateway
+```
+If you cloned from GitHub, pull the latest changes and re-build:
+```bash
+git pull
+npm install
+npm run build
+```
+
 ---
 
 ## ⚙️ Configuration & Usage
@@ -59,6 +71,7 @@ To connect your AI client (e.g., Claude Desktop, Cursor), configure it to talk t
 
 **Method 1: Direct STDIO Bridge (For Claude Desktop / Local Clients)**
 If you want the AI client to directly boot the Gateway process internally without relying on the background daemon, simply point it to the compiled `stdio.js`:
+*(💡 Tip: You can run `sudo npx aagcli stdio-path` anytime to get the exact absolute path to this file)*
 ```json
 {
   "mcpServers": {
@@ -149,6 +162,13 @@ sudo npx aagcli mcp list
 
 # View all live tools (and their descriptions) available on 'github_mcp'
 sudo npx aagcli mcp tools github_mcp
+```
+
+### 5. Utility Commands
+When integrating a local AI client (like Cursor or Claude Desktop) via the `stdio` connection method, you can use this helper command to instantly retrieve the absolute path of the built `stdio.js` launcher.
+```bash
+# Get the absolute path to the local stdio proxy script
+sudo npx aagcli stdio-path
 ```
 
 ---

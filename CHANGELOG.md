@@ -5,6 +5,17 @@ All notable changes to the **AI Auth Gateway (AAG)** project will be documented 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-03-25
+### Added
+- **CLI**: Added the `aagcli stdio-path` command to easily resolve the absolute path of `stdio.js` for local AI client (e.g., Cursor, Claude Desktop) configurations.
+- **Documentation**: Added NPM system update instructions globally to `README.md` and `README_ZH.md`.
+
+### Security
+- **Config**: Disabled the Express `X-Powered-By` header in the proxy server to resolve CWE-200 Information Exposure vulnerability.
+
+### Changed
+- **Daemon**: Removed redundant verbose logging of the `stdio.js` absolute path during background server startup (`aagcli sse start`) to keep logs cleaner.
+
 ## [1.0.2] - 2026-03-25
 ### Security & Maintenance
 - **Fixed**: Resolved a security/maintenance alert regarding the deprecated `prebuild-install` dependency.

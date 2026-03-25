@@ -67,10 +67,6 @@ export function registerDaemonCommands(program: Command) {
         console.log(`📡 URL: http://localhost:[Port]/sse`);
         console.log(`📂 Output log: ${outLog}`);
         console.log(`📊 Check status with: aagcli sse status`);
-
-        const stdioPath = path.join(__dirname, "..", "stdio.js");
-        console.log(`\n💡 To connect a local STDIO client (like Cursor/Claude Desktop), use this Absolute Path:`);
-        console.log(`   ${stdioPath}`);
       } else {
         console.error("❌ Failed to start the background process.");
       }

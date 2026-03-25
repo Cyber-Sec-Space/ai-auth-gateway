@@ -70,6 +70,7 @@ A complete command-line interface (`src/commands/`) requiring `sudo` privileges 
 - **`mcp`**: Discover online downstream servers and live tool configurations.
 - **`ai`**: Register AI clients, revoke keys, and manage granular RBAC permissions.
 - **`keychain`**: Securely store downstream API keys directly in the host OS's secure storage.
+- **`stdio-path`**: Resolves the absolute path of the compiled `stdio.js` script for local AI clients.
 
 ---
 
