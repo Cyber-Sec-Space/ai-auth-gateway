@@ -5,6 +5,8 @@ The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built wit
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
+[🇹🇼 繁體中文版 README (Traditional Chinese Version)](README_ZH.md)
+
 > **Notice**: This is the **Community Edition (Open Source)** licensed under [AGPLv3](LICENSE). For enterprise deployment, white-labeling, or building commercial non-open-source services using this gateway, a **Commercial License** will be available soon. Please contact the author for commercial licensing inquiries.
 
 ## Features

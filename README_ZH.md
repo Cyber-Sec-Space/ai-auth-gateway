@@ -5,6 +5,8 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
+[🇺🇸 English README (英文版)](README.md)
+
 > **商業授權聲明 (Dual Licensing)**: 目前釋出的為 **社群開源版 (Community Edition)**，採用 [AGPL-3.0](LICENSE) 授權。若您計畫將此框架整合於商業閉源產品中、作為收費網路服務 (SaaS) 提供，或有客製化需求，請購買即將推出的 **商業企業版授權 (Commercial License)** 以取得免開源豁免權利。
 
 ## 專案特色
