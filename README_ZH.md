@@ -144,3 +144,10 @@ sudo npx aagcli mcp tools github_mcp
 對於想深入理解資料流動、雙層加解密模型以及 Proxy 底層運作邏輯的使用者，請參閱：
 - [架構說明書 (英文版)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/ARCHITECTURE.md)
 - [架構說明書 (繁體中文版)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/ARCHITECTURE_ZH.md)
+
+---
+
+## 🐞 問題回報與參與貢獻
+如果您在使用過程中發現任何 Bug、有新功能建議，或是遇到設定上的問題，歡迎隨時 **[在 GitHub 上提交 Issue](https://github.com/Cyber-Sec-Space/ai-auth-gateway/issues)**！
+
+我們也非常歡迎您發起 Pull Request 一起來讓這套企業級 AI 代理框架變得更好更安全！

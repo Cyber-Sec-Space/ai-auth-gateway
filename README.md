@@ -144,3 +144,10 @@ sudo npx aagcli mcp tools github_mcp
 For an in-depth explanation of how data flows, how the dual-encryption model works, and more, please reference:
 - [Architecture Document (English)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/ARCHITECTURE.md)
 - [Architecture Document (Traditional Chinese)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/ARCHITECTURE_ZH.md)
+
+---
+
+## 🐞 Issues & Contributions
+Found a bug, have a feature request, or need help? Please don't hesitate to **[open an issue on GitHub](https://github.com/Cyber-Sec-Space/ai-auth-gateway/issues)**.
+
+Pull Requests are always welcome. Let's make enterprise-grade AI tool execution secure and accessible together!
