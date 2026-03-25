@@ -2,13 +2,14 @@
 
 **AI Auth Gateway** 是一個以 TypeScript 打造的 Model Context Protocol (MCP) 代理伺服器。它可以彙總多個下游 MCP 伺服器，並安全地將機密憑證（如 JWT 或 API 金鑰）動態注入 API 請求中。這讓 AI 客戶端（例如 Claude Desktop 或 Cursor）無需在其本機設定檔中暴露敏感資料，即可安全地存取遠端外部工具。
 
-[![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-success.svg)](CHANGELOG.md)
+[![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-success.svg)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/CHANGELOG.md)
+[![NPM Package](https://img.shields.io/npm/v/@cyber-sec.space/ai-auth-gateway.svg)](https://www.npmjs.com/package/@cyber-sec.space/ai-auth-gateway)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
-[🇺🇸 English README (英文版)](README.md) | [📜 版本更新紀錄 (Changelog)](CHANGELOG.md)
+[🇺🇸 English README (英文版)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/README.md) | [📜 版本更新紀錄 (Changelog)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/CHANGELOG.md)
 
-> **商業授權聲明 (Dual Licensing)**: 目前釋出的為 **社群開源版 (Community Edition)**，採用 [AGPL-3.0](LICENSE) 授權。若您計畫將此框架整合於商業閉源產品中、作為收費網路服務 (SaaS) 提供，或有客製化需求，請購買即將推出的 **商業企業版授權 (Commercial License)** 以取得免開源豁免權利。
+> **商業授權聲明 (Dual Licensing)**: 目前釋出的為 **社群開源版 (Community Edition)**，採用 [AGPL-3.0](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/LICENSE) 授權。若您計畫將此框架整合於商業閉源產品中、作為收費網路服務 (SaaS) 提供，或有客製化需求，請購買即將推出的 **商業企業版授權 (Commercial License)** 以取得免開源豁免權利。
 
 ## 專案特色
 - 🛡️ **安全憑證管理**: 結合作業系統原生金鑰圈 (`keytar`) 與 AES-256-GCM 加密技術，提供雙層防護安全儲存並注入 API 金鑰。
@@ -24,8 +25,15 @@
 - [Node.js](https://nodejs.org/) (建議 v16 以上)
 - `npm` 或 `yarn`
 
-### 2. 下載與編譯
-若是從原始碼部署（如部署至 VPS 或本機測試）：
+### 2. 透過 NPM 全域安裝 (官方建議)
+若您只想快速使用此平台，可直接透過官方的 NPM registry 全域安裝：
+```bash
+npm install -g @cyber-sec.space/ai-auth-gateway
+```
+*NPM 套件位址: [@cyber-sec.space/ai-auth-gateway](https://www.npmjs.com/package/@cyber-sec.space/ai-auth-gateway)*
+
+### 3. 下載與編譯 (原始碼部署)
+若是從原始碼部署（如部署至 VPS 或本機開發測試）：
 ```bash
 git clone https://github.com/Cyber-Sec-Space/ai-auth-gateway.git
 cd ai_auth_gateway
@@ -134,5 +142,5 @@ sudo npx aagcli mcp tools github_mcp
 
 ## 📖 深入了解系統架構
 對於想深入理解資料流動、雙層加解密模型以及 Proxy 底層運作邏輯的使用者，請參閱：
-- [架構說明書 (英文版)](ARCHITECTURE.md)
-- [架構說明書 (繁體中文版)](ARCHITECTURE_ZH.md)
+- [架構說明書 (英文版)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/ARCHITECTURE.md)
+- [架構說明書 (繁體中文版)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/ARCHITECTURE_ZH.md)

@@ -2,13 +2,14 @@
 
 The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built with TypeScript. It aggregates multiple downstream MCP servers and dynamically, securely injects credentials into API requests. This allows AI clients (like Claude Desktop or Cursor) to securely access remote external tools without exposing sensitive API keys or JWTs in their local configuration files.
 
-[![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-success.svg)](CHANGELOG.md)
+[![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-success.svg)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/CHANGELOG.md)
+[![NPM Package](https://img.shields.io/npm/v/@cyber-sec.space/ai-auth-gateway.svg)](https://www.npmjs.com/package/@cyber-sec.space/ai-auth-gateway)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
-[🇹🇼 繁體中文版 README (Traditional Chinese Version)](README_ZH.md) | [📜 Changelog / Version History](CHANGELOG.md)
+[🇹🇼 繁體中文版 README (Traditional Chinese Version)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/README_ZH.md) | [📜 Changelog / Version History](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/CHANGELOG.md)
 
-> **Notice**: This is the **Community Edition (Open Source)** licensed under [AGPLv3](LICENSE). For enterprise deployment, white-labeling, or building commercial non-open-source services using this gateway, a **Commercial License** will be available soon. Please contact the author for commercial licensing inquiries.
+> **Notice**: This is the **Community Edition (Open Source)** licensed under [AGPLv3](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/LICENSE). For enterprise deployment, white-labeling, or building commercial non-open-source services using this gateway, a **Commercial License** will be available soon. Please contact the author for commercial licensing inquiries.
 
 ## Features
 - 🛡️ **Secure Secret Management**: Integrates with the OS Keychain (`keytar`) and AES-256-GCM to securely store and inject API Keys.
@@ -24,16 +25,21 @@ The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built wit
 - [Node.js](https://nodejs.org/) (v16+ recommended)
 - `npm` or `yarn`
 
-### 2. Clone & Build
-If you are deploying from source:
+### 2. Install via NPM (Recommended)
+You can directly install the gateway globally from the official NPM registry:
 ```bash
-git clone https://github.com/yourusername/ai_auth_gateway.git
+npm install -g @cyber-sec.space/ai-auth-gateway
+```
+*NPM Page: [@cyber-sec.space/ai-auth-gateway](https://www.npmjs.com/package/@cyber-sec.space/ai-auth-gateway)*
+
+### 3. Clone & Build from Source
+If you are deploying from source or contributing:
+```bash
+git clone https://github.com/Cyber-Sec-Space/ai-auth-gateway.git
 cd ai_auth_gateway
 npm install
 npm run build
 ```
-
-*(Note: In the future, you may also install the CLI globally via `npm install -g ai-auth-gateway`)*
 
 ---
 
@@ -136,5 +142,5 @@ sudo npx aagcli mcp tools github_mcp
 
 ## 📖 Architecture & Deep Dive
 For an in-depth explanation of how data flows, how the dual-encryption model works, and more, please reference:
-- [Architecture Document (English)](ARCHITECTURE.md)
-- [Architecture Document (Traditional Chinese)](ARCHITECTURE_ZH.md)
+- [Architecture Document (English)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/ARCHITECTURE.md)
+- [Architecture Document (Traditional Chinese)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/ARCHITECTURE_ZH.md)
