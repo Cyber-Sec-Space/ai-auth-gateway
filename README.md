@@ -1,4 +1,4 @@
-# AI Auth Gateway
+# AI Auth Gateway (AAG)
 
 The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built with TypeScript. It aggregates multiple downstream MCP servers and dynamically, securely injects credentials into API requests. This allows AI clients (like Claude Desktop or Cursor) to securely access remote external tools without exposing sensitive API keys or JWTs in their local configuration files.
 
