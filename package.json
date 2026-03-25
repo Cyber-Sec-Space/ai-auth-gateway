@@ -1,6 +1,6 @@
 {
   "name": "@cyber-sec.space/ai-auth-gateway",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A Model Context Protocol (MCP) Proxy Gateway for secure AI tool execution, built with TypeScript, RBAC, and OS Keychain integration.",
   "main": "build/index.js",
   "bin": {
