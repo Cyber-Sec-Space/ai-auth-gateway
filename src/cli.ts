@@ -5,6 +5,7 @@ import { registerKeychainCommand } from "./commands/keychain.js";
 import { registerSystemConfigCommand } from "./commands/config.js";
 import { registerAiCommand } from "./commands/ai.js";
 import { registerMcpCommand } from "./commands/mcp.js";
+import { registerDaemonCommands } from "./commands/daemon.js";
 
 // Check if running as root/sudo
 if (process.getuid && process.getuid() !== 0) {
@@ -23,6 +24,7 @@ registerKeychainCommand(program);
 registerAiCommand(program);
 registerMcpCommand(program);
 registerSystemConfigCommand(program);
+registerDaemonCommands(program);
 
 program.parseAsync(process.argv).catch(err => {
   console.error(err);
