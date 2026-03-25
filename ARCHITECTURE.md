@@ -9,32 +9,36 @@ The **AI Auth Gateway** acts as a secure intermediary (proxy) between upstream A
 The system enforces **Upstream Authentication**, requiring connecting clients to prove their identity via an `AI_ID` and `AI_KEY` before interacting with the proxy. It also handles **Downstream Authentication Injection**, seamlessly adding necessary secrets (JWTs, API Keys, PATs) to requests destined for external tools without exposing those secrets to the upstream AI clients.
 
 ```mermaid
-architecture-beta
-    group client(cloud)[Upstream AI Clients]
-    service cursor(desktop)[Cursor] in client
-    service claude(desktop)[Claude Desktop] in client
+flowchart TD
+    subgraph client ["Upstream AI Clients"]
+        cursor["Cursor"]
+        claude["Claude Desktop"]
+    end
 
-    group cli(server)[AAG-CLI (Host Config)]
-    service vault(database)[OS Keychain Vault] in cli
-    service config(database)[File Config Store] in cli
+    subgraph cli ["AAG-CLI (Host Config)"]
+        vault[("OS Keychain Vault")]
+        config[("File Config Store")]
+    end
 
-    group gateway(server)[AAG-Core (Library)]
-    service proxy(server)[Proxy Engine & RBAC] in gateway
+    subgraph gateway ["AAG-Core (Library)"]
+        proxy["Proxy Engine & RBAC"]
+    end
 
-    group downstream(cloud)[Downstream MCP Servers]
-    service local(server)[stdio Server] in downstream
-    service github(server)[SSE Server] in downstream
-    service remote(server)[HTTP Server] in downstream
+    subgraph downstream ["Downstream MCP Servers"]
+        local_s["stdio Server"]
+        github_s["SSE Server"]
+        remote_s["HTTP Server"]
+    end
 
-    cursor:R --> L:proxy
-    claude:R --> L:proxy
+    cursor --> proxy
+    claude --> proxy
 
-    proxy:R --> L:local
-    proxy:R --> L:github
-    proxy:R --> L:remote
+    proxy --> local_s
+    proxy --> github_s
+    proxy --> remote_s
 
-    proxy:B --> T:config
-    proxy:B --> T:vault
+    proxy -.-> config
+    proxy -.-> vault
 ```
 
 ---
