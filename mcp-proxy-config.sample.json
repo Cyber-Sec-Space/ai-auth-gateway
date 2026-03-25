@@ -1,0 +1,57 @@
+{
+  "system": {
+    "port": 3000,
+    "logLevel": "INFO"
+  },
+  "masterKey": "your_securely_generated_64_character_hex_string",
+  "mcpServers": {
+    "local_database": {
+      "transport": "stdio",
+      "command": "node",
+      "args": [
+        "/path/to/your/database_mcp.js"
+      ],
+      "authInjection": {
+        "type": "none"
+      }
+    },
+    "github_mcp": {
+      "transport": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "authInjection": {
+        "type": "header",
+        "headerName": "Authorization",
+        "value": "Bearer keytar://github/pat"
+      }
+    },
+    "remote_service": {
+      "transport": "sse",
+      "url": "https://my-remote-service.com/sse",
+      "authInjection": {
+        "type": "env",
+        "key": "API_KEY",
+        "value": "$MY_ENV_API_KEY"
+      }
+    }
+  },
+  "aiKeys": {
+    "example-ai": {
+      "key": "your_securely_generated_ai_key_hash",
+      "description": "An example AI client assigned specific tool access",
+      "createdAt": "2026-03-25T00:00:00.000Z",
+      "revoked": false,
+      "permissions": {
+        "allowedServers": [
+          "local_database"
+        ],
+        "deniedServers": [],
+        "allowedTools": [
+          "github_mcp___get_me"
+        ],
+        "deniedTools": [
+          "local_database___drop_table"
+        ]
+      }
+    }
+  }
+}
