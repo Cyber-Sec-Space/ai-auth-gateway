@@ -2,10 +2,11 @@
 
 **AI Auth Gateway** 是一個以 TypeScript 打造的 Model Context Protocol (MCP) 代理伺服器。它可以彙總多個下游 MCP 伺服器，並安全地將機密憑證（如 JWT 或 API 金鑰）動態注入 API 請求中。這讓 AI 客戶端（例如 Claude Desktop 或 Cursor）無需在其本機設定檔中暴露敏感資料，即可安全地存取遠端外部工具。
 
+[![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-success.svg)](CHANGELOG.md)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
-[🇺🇸 English README (英文版)](README.md)
+[🇺🇸 English README (英文版)](README.md) | [📜 版本更新紀錄 (Changelog)](CHANGELOG.md)
 
 > **商業授權聲明 (Dual Licensing)**: 目前釋出的為 **社群開源版 (Community Edition)**，採用 [AGPL-3.0](LICENSE) 授權。若您計畫將此框架整合於商業閉源產品中、作為收費網路服務 (SaaS) 提供，或有客製化需求，請購買即將推出的 **商業企業版授權 (Commercial License)** 以取得免開源豁免權利。
 

@@ -2,10 +2,11 @@
 
 The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built with TypeScript. It aggregates multiple downstream MCP servers and dynamically, securely injects credentials into API requests. This allows AI clients (like Claude Desktop or Cursor) to securely access remote external tools without exposing sensitive API keys or JWTs in their local configuration files.
 
+[![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-success.svg)](CHANGELOG.md)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
-[🇹🇼 繁體中文版 README (Traditional Chinese Version)](README_ZH.md)
+[🇹🇼 繁體中文版 README (Traditional Chinese Version)](README_ZH.md) | [📜 Changelog / Version History](CHANGELOG.md)
 
 > **Notice**: This is the **Community Edition (Open Source)** licensed under [AGPLv3](LICENSE). For enterprise deployment, white-labeling, or building commercial non-open-source services using this gateway, a **Commercial License** will be available soon. Please contact the author for commercial licensing inquiries.
 
