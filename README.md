@@ -57,17 +57,17 @@ npm start
 ### Connecting your AI Client
 To connect your AI client (e.g., Claude Desktop, Cursor), configure it to talk to the gateway. Pass the `AI_ID` and `AI_KEY` environment variables to authenticate.
 
-**Method 1: Using the STDIO Adapter (For Claude Desktop)**
-Since Claude Desktop primarily supports `stdio` connections, you can use the included adapter script to bridge STDIO to the Gateway's SSE endpoint:
+**Method 1: Direct STDIO Bridge (For Claude Desktop / Local Clients)**
+If you want the AI client to directly boot the Gateway process internally without relying on the background daemon, simply point it to the compiled `stdio.js`:
 ```json
 {
   "mcpServers": {
     "ai-auth-gateway": {
       "command": "node",
-      "args": ["/path/to/ai_auth_gateway/build/tests/sse_client.js"],
+      "args": ["/absolute/path/to/ai_auth_gateway/build/stdio.js"],
       "env": {
         "AI_ID": "my-ai",
-        "AI_KEY": "your_secure_hash_here"
+        "AI_KEY": "key_hash_generated_by_aagcli"
       }
     }
   }
