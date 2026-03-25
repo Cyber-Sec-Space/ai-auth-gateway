@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import keytar from "keytar";
+import keytar from "@hackolade/keytar";
 import * as readline from "readline";
 import * as path from "path";
 import { fileURLToPath } from "url";

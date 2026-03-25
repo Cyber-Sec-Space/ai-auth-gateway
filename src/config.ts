@@ -2,7 +2,7 @@ import { z } from "zod";
 import * as fs from "fs";
 import chokidar from "chokidar";
 import { EventEmitter } from "events";
-import keytar from "keytar";
+import keytar from "@hackolade/keytar";
 import { CryptoService } from "./crypto.js";
 
 export const AuthInjectionSchema = z.object({
