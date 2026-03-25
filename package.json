@@ -1,8 +1,9 @@
 {
-  "name": "ai_auth_gateway",
+  "name": "ai-auth-gateway",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A secure Model Context Protocol (MCP) proxy with RBAC and keychain credential injection.",
+  "main": "build/index.js",
+  "type": "module",
   "bin": {
     "aagcli": "build/cli.js"
   },
@@ -12,10 +13,24 @@
     "start": "node build/index.js",
     "aagcli": "node build/cli.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "proxy",
+    "auth",
+    "gateway",
+    "claude"
+  ],
+  "author": "Cyber-Sec-Space",
   "license": "AGPL-3.0",
-  "type": "module",
+  "files": [
+    "build/",
+    "mcp-proxy-config.sample.json",
+    "README.md",
+    "README_ZH.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "chokidar": "^5.0.0",
