@@ -9,32 +9,36 @@
 系統強制實施 **上游身份驗證 (Upstream Authentication)**，要求連接的客戶端必須透過 `AI_ID` 與 `AI_KEY` 來證明其身份，方能與代理伺服器互動。同時，系統也處理 **下游驗證注入 (Downstream Authentication Injection)**，將必要的機密憑證（如 JWT、API 金鑰、PAT）無縫加入發往外部工具的請求中，而無需將這些機密暴露給上游 AI 客戶端。
 
 ```mermaid
-architecture-beta
-    group client(cloud)[上游 AI 客戶端]
-    service cursor(desktop)[Cursor] in client
-    service claude(desktop)[Claude Desktop] in client
+flowchart TD
+    subgraph client ["上游 AI 客戶端"]
+        cursor["Cursor"]
+        claude["Claude Desktop"]
+    end
 
-    group cli(server)[AAG-CLI 主程式端]
-    service vault(database)[OS Keytar 作業系統金鑰庫] in cli
-    service config(database)[本地實體檔案設定庫] in cli
+    subgraph cli ["AAG-CLI 主程式端"]
+        vault[("OS Keytar 作業系統金鑰庫")]
+        config[("本地實體檔案設定庫")]
+    end
 
-    group gateway(server)[AAG-Core (核心函數庫)]
-    service proxy(server)[Proxy 轉發與 RBAC 控制引擎] in gateway
+    subgraph gateway ["AAG-Core (核心函數庫)"]
+        proxy["Proxy 轉發與 RBAC 控制引擎"]
+    end
 
-    group downstream(cloud)[下游 MCP 伺服器]
-    service local(server)[本機 stdio 伺服器] in downstream
-    service github(server)[遠端 SSE 伺服器] in downstream
-    service remote(server)[自訂 HTTP 伺服器] in downstream
+    subgraph downstream ["下游 MCP 伺服器"]
+        local_s["本機 stdio 伺服器"]
+        github_s["遠端 SSE 伺服器"]
+        remote_s["自訂 HTTP 伺服器"]
+    end
 
-    cursor:R --> L:proxy
-    claude:R --> L:proxy
+    cursor --> proxy
+    claude --> proxy
 
-    proxy:R --> L:local
-    proxy:R --> L:github
-    proxy:R --> L:remote
+    proxy --> local_s
+    proxy --> github_s
+    proxy --> remote_s
 
-    proxy:B --> T:config
-    proxy:B --> T:vault
+    proxy -.-> config
+    proxy -.-> vault
 ```
 
 ---
