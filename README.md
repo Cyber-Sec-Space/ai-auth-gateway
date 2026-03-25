@@ -2,7 +2,7 @@
 
 The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built with TypeScript. It aggregates multiple downstream MCP servers and dynamically, securely injects credentials into API requests. This allows AI clients (like Claude Desktop or Cursor) to securely access remote external tools without exposing sensitive API keys or JWTs in their local configuration files.
 
-[![Version: 1.0.6](https://img.shields.io/badge/Version-1.0.6-success.svg)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/CHANGELOG.md)
+[![Version: 1.0.7](https://img.shields.io/badge/Version-1.0.7-success.svg)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/CHANGELOG.md)
 [![NPM Package](https://img.shields.io/npm/v/@cyber-sec.space/ai-auth-gateway.svg)](https://www.npmjs.com/package/@cyber-sec.space/ai-auth-gateway)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
@@ -15,6 +15,7 @@ The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built wit
 - 🛡️ **Secure Secret Management**: Integrates with the OS Keychain (`keytar`) and AES-256-GCM to securely store and inject API Keys.
 - 🔀 **Protocol Multiplexing**: Connects seamlessly over `stdio`, `sse`, or `http` to downstream servers.
 - 🔒 **Granular RBAC**: Control specifically which connected AI client can access which tools across which servers.
+- 📦 **Modular Core**: Built on top of the `@cyber-sec.space/aag-core` library. Fully dependency-injected for easy enterprise adoption (e.g. replacing Keytar with Hashicorp Vault).
 - 🕵️ **Auditing & Logging**: Masked and secured logs track AIID, connection times, and tool execution status (`logs/proxy.log`).
 
 ---

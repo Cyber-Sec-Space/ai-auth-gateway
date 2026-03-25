@@ -6,9 +6,14 @@
   "bin": {
     "aagcli": "build/cli.js"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
+    "build:core": "npm run build --workspace=@cyber-sec.space/aag-core",
+    "build:cli": "tsc",
+    "build": "npm run build:core && npm run build:cli",
     "start": "node build/index.js",
     "aagcli": "node build/cli.js"
   },
@@ -24,20 +29,19 @@
     "mcp-proxy-config.sample.json"
   ],
   "dependencies": {
+    "@cyber-sec.space/aag-core": "1.0.0",
     "@hackolade/keytar": "^7.9.0-7",
-    "@modelcontextprotocol/sdk": "^1.27.1",
     "chokidar": "^5.0.0",
     "commander": "^14.0.3",
     "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "zod": "^4.3.6"
+    "express": "^5.2.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/keytar": "^4.4.0",
-    "@types/node": "^25.5.0",
+    "@types/node": "^20.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.0.0"
   }
 }

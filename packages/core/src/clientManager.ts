@@ -2,15 +2,21 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { ProxyConfig, McpServerConfig, ConfigManager, McpStdioConfig, McpSseConfig, McpHttpConfig } from "./config.js";
-import { Logger } from "./utils/logger.js";
+import { ProxyConfig, McpServerConfig, McpStdioConfig, McpSseConfig, McpHttpConfig } from "./config/types.js";
+import { IConfigStore } from "./interfaces/IConfigStore.js";
+import { ISecretStore } from "./interfaces/ISecretStore.js";
+import { IAuditLogger } from "./interfaces/IAuditLogger.js";
 
 export class ClientManager {
   private clients: Map<string, Client> = new Map();
-  private configManager: ConfigManager;
+  private configStore: IConfigStore;
+  private secretStore: ISecretStore;
+  private logger: IAuditLogger;
 
-  constructor(configManager: ConfigManager) {
-    this.configManager = configManager;
+  constructor(configStore: IConfigStore, secretStore: ISecretStore, logger: IAuditLogger) {
+    this.configStore = configStore;
+    this.secretStore = secretStore;
+    this.logger = logger;
   }
 
   public async syncConfig(config: ProxyConfig) {
@@ -37,10 +43,10 @@ export class ClientManager {
       try {
         await client.close();
       } catch (e: any) {
-        Logger.error("ClientManager", `Error closing client ${id}: ${e.message}`);
+        this.logger.error("ClientManager", `Error closing client ${id}: ${e.message}`);
       }
       this.clients.delete(id);
-      Logger.info("ClientManager", `Removed downstream client: ${id}`);
+      this.logger.info("ClientManager", `Removed downstream client: ${id}`);
     }
   }
 
@@ -58,7 +64,7 @@ export class ClientManager {
         const env: Record<string, string> = Object.assign({}, process.env, stdioConfig.env) as Record<string, string>;
         
         if (config.authInjection?.type === "env" && config.authInjection.key) {
-          env[config.authInjection.key] = await this.configManager.resolveAuthValue(config.authInjection.value) || "";
+          env[config.authInjection.key] = await this.secretStore.resolveSecret(config.authInjection.value || "") || "";
         }
 
         transport = new StdioClientTransport({
@@ -72,7 +78,7 @@ export class ClientManager {
         const headers: Record<string, string> = {};
         
         if (config.authInjection?.type === "header" && config.authInjection.headerName) {
-          headers[config.authInjection.headerName] = await this.configManager.resolveAuthValue(config.authInjection.value) || "";
+          headers[config.authInjection.headerName] = await this.secretStore.resolveSecret(config.authInjection.value || "") || "";
         }
 
         transport = new SSEClientTransport(new URL(sseConfig.url), {
@@ -84,7 +90,7 @@ export class ClientManager {
         const headers: Record<string, string> = {};
         
         if (config.authInjection?.type === "header" && config.authInjection.headerName) {
-          headers[config.authInjection.headerName] = await this.configManager.resolveAuthValue(config.authInjection.value) || "";
+          headers[config.authInjection.headerName] = await this.secretStore.resolveSecret(config.authInjection.value || "") || "";
         }
 
         transport = new StreamableHTTPClientTransport(new URL(httpConfig.url), {
@@ -95,10 +101,10 @@ export class ClientManager {
       if (transport) {
         await client.connect(transport);
         this.clients.set(id, client);
-        Logger.info("ClientManager", `Successfully connected to downstream: ${id}`);
+        this.logger.info("ClientManager", `Successfully connected to downstream: ${id}`);
       }
     } catch (e: any) {
-      Logger.error("ClientManager", `Failed to connect downstream: ${id} - ${e.message}`);
+      this.logger.error("ClientManager", `Failed to connect downstream: ${id} - ${e.message}`);
     }
   }
 

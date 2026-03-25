@@ -2,8 +2,10 @@ import { Command } from "commander";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { ClientManager } from "../clientManager.js";
-import { ConfigManager } from "../config.js";
+import { ClientManager } from "@cyber-sec.space/aag-core";
+import { FileConfigStore } from "../services/FileConfigStore.js";
+import { KeychainSecretStore } from "../services/KeychainSecretStore.js";
+import { ConsoleAuditLogger } from "../services/ConsoleAuditLogger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,9 +31,12 @@ export function registerMcpCommand(program: Command) {
   mcp.command("tools <serverId>")
     .description("List actual tools from a specific downstream server (requires connection)")
     .action(async (serverId) => {
-      const configManager = new ConfigManager(CONFIG_PATH);
-      const clientManager = new ClientManager(configManager);
-      const config = configManager.load();
+      const configStore = new FileConfigStore(CONFIG_PATH);
+      const secretStore = new KeychainSecretStore(configStore);
+      const logger = new ConsoleAuditLogger();
+      
+      const clientManager = new ClientManager(configStore, secretStore, logger);
+      const config = configStore.load();
       
       const serverConfig = config.mcpServers[serverId];
       if (!serverConfig) {
@@ -40,8 +45,6 @@ export function registerMcpCommand(program: Command) {
       }
 
       console.log(`Connecting to '${serverId}'...`);
-      // We need to temporarily sync the config to add JUST this one client for discovery
-      // Using a subset of config to avoid connecting to everything
       const discoveryConfig = { ...config, mcpServers: { [serverId]: serverConfig } };
       await clientManager.syncConfig(discoveryConfig);
 
@@ -54,7 +57,7 @@ export function registerMcpCommand(program: Command) {
       try {
         const response = await client.listTools();
         console.log(`\nAvailable Tools for '${serverId}':`);
-        const tableData = response.tools.map(t => ({
+        const tableData = response.tools.map((t: any) => ({
             "Tool Name": t.name,
             "Full Namespaced Path": `${serverId}___${t.name}`,
             "Description": t.description || "(no description)"
