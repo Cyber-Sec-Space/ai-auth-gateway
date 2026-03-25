@@ -123,6 +123,19 @@ function batchModifyPermission(aiidsStr: string, type: string, targetsStr: strin
         if (idx !== -1) otherList.splice(idx, 1);
         if (!list.includes(target)) list.push(target);
       } else if (type === "tool") {
+        if (mode === "allow") {
+          // Cross-validate: You must have access to the parent server before permitting a tool
+          const parts = target.split("___");
+          if (parts.length > 1) {
+            const serverId = parts[0];
+            const hasServerWhitelist = auth.permissions.allowedServers.length > 0;
+            const isServerAllowed = !hasServerWhitelist || auth.permissions.allowedServers.includes(serverId);
+            if (!isServerAllowed) {
+              console.error(`\x1b[31m[Error] Cannot permit tool '${target}' because AI ID '${aiid}' does not have explicit access to server '${serverId}'. Please permit the server first.\x1b[0m`);
+              continue;
+            }
+          }
+        }
         const list = mode === "allow" ? auth.permissions.allowedTools : auth.permissions.deniedTools;
         const otherList = mode === "allow" ? auth.permissions.deniedTools : auth.permissions.allowedTools;
         const idx = otherList.indexOf(target);

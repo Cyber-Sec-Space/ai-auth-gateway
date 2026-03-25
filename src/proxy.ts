@@ -88,7 +88,7 @@ export class ProxyServer {
     // 2. Check tool-level denial (Explicit deny always wins)
     if (deniedTools?.includes(fullToolName)) return false;
 
-    // 3. Check for ANY allowance (If whitelists exist, at least one must match)
+    // 3. Strict AND validation for whitelists
     const hasServerWhitelist = allowedServers && allowedServers.length > 0;
     const hasToolWhitelist = allowedTools && allowedTools.length > 0;
 
@@ -96,11 +96,13 @@ export class ProxyServer {
       return true; // No whitelists = allowed by default (unless denied)
     }
 
-    // If either the server is allowed OR the specific tool is allowed, it passes
-    const serverIsAllowed = !!(hasServerWhitelist && allowedServers!.includes(serverId));
-    const toolIsAllowed = !!(hasToolWhitelist && allowedTools!.includes(fullToolName));
+    // Server must be allowed (if there's a server whitelist)
+    const serverIsAllowed = !hasServerWhitelist || allowedServers!.includes(serverId);
+    
+    // Tool must be allowed (if there's a tool whitelist)
+    const toolIsAllowed = !hasToolWhitelist || allowedTools!.includes(fullToolName);
 
-    return serverIsAllowed || toolIsAllowed;
+    return serverIsAllowed && toolIsAllowed;
   }
 
   private setupRequestHandlers() {
