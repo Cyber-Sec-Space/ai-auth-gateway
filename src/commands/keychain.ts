@@ -3,15 +3,15 @@ import keytar from "@hackolade/keytar";
 import * as readline from "readline";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { ConfigManager } from "../config.js";
+import { FileConfigStore } from "../services/FileConfigStore.js";
 import { CryptoService } from "../crypto.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function initializeConfig(): ConfigManager {
+function initializeConfig(): FileConfigStore {
   const configPath = path.join(__dirname, "..", "..", "mcp-proxy-config.json");
-  const configManager = new ConfigManager(configPath);
+  const configManager = new FileConfigStore(configPath);
   configManager.load(); // This will auto-generate the master key if missing
   return configManager;
 }

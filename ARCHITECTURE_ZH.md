@@ -14,10 +14,12 @@ architecture-beta
     service cursor(desktop)[Cursor] in client
     service claude(desktop)[Claude Desktop] in client
 
-    group gateway(server)[AI Auth Gateway]
-    service proxy(server)[連線轉發 Proxy] in gateway
-    service rbac(database)[RBAC 權限引擎] in gateway
-    service vault(database)[設定與安全金庫] in gateway
+    group cli(server)[AAG-CLI 主程式端]
+    service vault(database)[OS Keytar 作業系統金鑰庫] in cli
+    service config(database)[本地實體檔案設定庫] in cli
+
+    group gateway(server)[AAG-Core (核心函數庫)]
+    service proxy(server)[Proxy 轉發與 RBAC 控制引擎] in gateway
 
     group downstream(cloud)[下游 MCP 伺服器]
     service local(server)[本機 stdio 伺服器] in downstream
@@ -31,7 +33,7 @@ architecture-beta
     proxy:R --> L:github
     proxy:R --> L:remote
 
-    proxy:B --> T:rbac
+    proxy:B --> T:config
     proxy:B --> T:vault
 ```
 
@@ -39,22 +41,21 @@ architecture-beta
 
 ## 2. 核心組件
 
-此架構建構於官方的 `@modelcontextprotocol/sdk` 之上，主要包含以下六個核心支柱：
+此架構採用 **NPM Workspace (Monorepo)** 建立於官方 `@modelcontextprotocol/sdk` 之上。透過嚴格的依賴注入 (`ISecretStore`、`IConfigStore`、`IAuditLogger`)，系統將高重用性、與作業系統無關的 `@cyber-sec.space/aag-core` (核心函式庫) 與 `ai-auth-gateway` (CLI 主程式) 完全分離。
 
-### A. 代理伺服器核心 (`src/proxy.ts` & `src/index.ts`)
-- **傳輸層**: 透過 Server-Sent Events (SSE) 監聽來自 AI 客戶端的連線。
-- **身份驗證**: 將傳入的 `AI_ID` 和 `AI_KEY` 與設定檔中已授權的實體進行比對驗證。
+### A. 代理伺服器核心 (`packages/core/src/proxy.ts`)
+- **傳輸層**: 接收來自 AI 客戶端的 Server-Sent Events (SSE) 或 STDIO 連線。
+- **身份驗證**: 將傳入的 `AI_ID` 和 `AI_KEY` 透過注入的 `IConfigStore` 進行比對驗證。
 - **協定模擬**: 攔截標準 MCP 請求（如 `ListToolsRequestSchema`、`CallToolRequestSchema`）並將其分發到多個下游伺服器。
 
-### B. 客戶端管理器 (`src/clientManager.ts`)
+### B. 客戶端管理器 (`packages/core/src/clientManager.ts`)
 - **多路復用 (Multiplexing)**: 管理一個下游 MCP 客戶端池，每個客戶端皆連接著不同的目標伺服器。
 - **傳輸支援**: 支援使用 `stdio`、`sse` 以及 `http` 與下游進行通訊。
 - **生命週期**: 處理下游服務的連線、斷線及錯誤復原。
 
-### C. 設定管理器 (`src/config.ts`)
-- **單一事實來源**: 讀取與寫入 `mcp-proxy-config.json`，並利用 `chokidar` 監控檔案變更以達到熱重載 (Hot-reload)。
-- **主金鑰加密**: 生成並管理用來加解密透過作業系統憑證庫 (`keytar`) 傳遞敏感資料的 `masterKey`。
-- **機密解析**: 動態解析 `authInjection` 的值，無論它們是原始字串、環境變數 (`$VAR`) 還是憑證庫參照 (`keytar://service/account`)。
+### C. 設定管理器與儲存介面
+- **核心介面 (`IConfigStore`, `ISecretStore`)**: 核心 Proxy 完全不去預設立場資料該如何儲存，這使得企業端能輕易地將本機檔案庫抽換為關聯式資料庫或是 Hashicorp Vault。
+- **CLI 實作端 (根目錄)**: CLI 主程式設計了特製的 `FileConfigStore` (透過 `chokidar` 監聽本地 `mcp-proxy-config.json`) 及 `KeychainSecretStore` (透過 `keytar` 操作 OS 原生鑰匙圈)，並在啟動時注入給上述核心使用。
 
 ### D. 基於角色的存取控制 (RBAC) 引擎
 - 直接整合於代理層，RBAC 引擎可根據每個 `AIKey` 所定義的精細白名單與黑名單，過濾 AI 能看到及呼叫的工具。
@@ -81,23 +82,23 @@ architecture-beta
 ```mermaid
 sequenceDiagram
     participant AI as AI 客戶端
-    participant GW as AI Auth Gateway
-    participant CFG as 設定管理器
+    participant Core as AAG-Core (代理核心)
+    participant CFG as AAG-CLI (IConfigStore 介面)
     participant MCP as 下游伺服器群
 
-    AI->>GW: 連接至 /sse (探索工具清單)
-    GW->>GW: 攔截並擷取 AI_ID & AI_KEY
-    GW->>CFG: 驗證連線憑證
+    AI->>Core: 連接至 /sse (探索工具清單)
+    Core->>Core: 攔截並擷取 AI_ID & AI_KEY
+    Core->>CFG: 透過注入介面驗證連線憑證
     alt 憑證無效
-        CFG-->>GW: 未授權
-        GW-->>AI: 401 Unauthorized / 中斷連線
+        CFG-->>Core: 未授權
+        Core-->>AI: 401 Unauthorized / 中斷連線
     else 憑證正確有效
-        CFG-->>GW: 通過驗證 (回傳該 AI 權限)
-        GW->>MCP: 取得所有在線伺服器的可用工具
-        MCP-->>GW: 回傳未過濾的工具總表
-        GW->>GW: 依據 RBAC (allowedTools) 刪除無權限的工具
-        GW->>GW: 將工具名稱加上前綴 (例如 server___tool)
-        GW-->>AI: 傳回篩選後、安全隔離的工具清單
+        CFG-->>Core: 通過驗證 (回傳該 AI 權限)
+        Core->>MCP: 取得所有在線伺服器的可用工具
+        MCP-->>Core: 回傳未過濾的工具總表
+        Core->>Core: 依據 RBAC (allowedTools) 刪除無權限的工具
+        Core->>Core: 將工具名稱加上前綴 (例如 server___tool)
+        Core-->>AI: 傳回篩選後、安全隔離的工具清單
     end
 ```
 
@@ -106,21 +107,21 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant AI as AI 客戶端
-    participant GW as Gateway (代理伺服器)
-    participant KV as 作業系統憑證庫 (Keytar)
+    participant Core as AAG-Core (代理核心)
+    participant KV as AAG-CLI (ISecretStore 介面)
     participant MCP as 目標下游伺服器
 
-    AI->>GW: CallTool 請求 (github_mcp___get_me)
-    GW->>GW: 移除前綴解析目標 -> 伺服器: github_mcp / 工具: get_me
-    GW->>GW: 嚴格檢查該 AI 是否具備工具執行權限
+    AI->>Core: CallTool 請求 (github_mcp___get_me)
+    Core->>Core: 移除前綴解析目標 -> 伺服器: github_mcp / 工具: get_me
+    Core->>Core: 嚴格檢查該 AI 是否具備工具執行權限
     alt 遭到拒絕
-        GW-->>AI: 錯誤：拒絕存取，權限不足
+        Core-->>AI: 錯誤：拒絕存取，權限不足
     else 允許存取
-        GW->>KV: 請求讀取 github_mcp 指定的注入金鑰
-        KV-->>GW: 解密並回傳原始的連線令牌 (API Key)
-        GW->>MCP: 秘密地將金鑰注入 HTTP 標頭或環境變數並轉發請求
-        MCP-->>GW: 回傳外部 API 的真實執行結果
-        GW-->>AI: 將結果安全轉發回上游 AI
+        Core->>KV: 請求讀取 github_mcp 指定的注入金鑰
+        KV-->>Core: ISecretStore 解密並回傳原始的連線令牌
+        Core->>MCP: 秘密地將金鑰注入 HTTP 標頭或環境變數並轉發請求
+        MCP-->>Core: 回傳外部 API 的真實執行結果
+        Core-->>AI: 將結果安全轉發回上游 AI
     end
 ```
 

@@ -1,27 +1,30 @@
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
 import cors from "cors";
-import { ConfigManager } from "./config.js";
-import { ClientManager } from "./clientManager.js";
-import { ProxyServer } from "./proxy.js";
+import { ClientManager, ProxyServer } from "@cyber-sec.space/aag-core";
+import { FileConfigStore } from "./services/FileConfigStore.js";
+import { KeychainSecretStore } from "./services/KeychainSecretStore.js";
+import { ConsoleAuditLogger } from "./services/ConsoleAuditLogger.js";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { Logger } from "./utils/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function main() {
   const configPath = path.join(__dirname, "..", "mcp-proxy-config.json");
-  const configManager = new ConfigManager(configPath);
-  const clientManager = new ClientManager(configManager);
-  const proxy = new ProxyServer(clientManager, configManager);
+  const configStore = new FileConfigStore(configPath);
+  const secretStore = new KeychainSecretStore(configStore);
+  const logger = new ConsoleAuditLogger();
+  
+  const clientManager = new ClientManager(configStore, secretStore, logger);
+  const proxy = new ProxyServer(clientManager, configStore, secretStore, logger);
 
-  const initialConfig = configManager.load();
+  const initialConfig = configStore.load();
   await clientManager.syncConfig(initialConfig);
 
-  configManager.watch();
-  configManager.on("configChanged", async (newConfig) => {
+  configStore.watch();
+  configStore.on("configChanged", async (newConfig) => {
     await clientManager.syncConfig(newConfig);
   });
 
@@ -32,27 +35,26 @@ async function main() {
   const transports = new Map<string, SSEServerTransport>();
 
   app.get("/sse", async (req, res) => {
-    Logger.info("Proxy", "New SSE connection established");
+    logger.info("Proxy", "New SSE connection established");
     const absoluteEndpoint = `${req.protocol}://${req.get("host")}/message`;
     const transport = new SSEServerTransport(absoluteEndpoint, res);
     transports.set(transport.sessionId, transport);
     
-    // Instantiate a new MCP Server per client connection to avoid "already initialized" errors
-    const sessionProxy = new ProxyServer(clientManager, configManager);
+    const sessionProxy = new ProxyServer(clientManager, configStore, secretStore, logger);
     await sessionProxy.server.connect(transport);
 
     res.on("close", () => {
-      Logger.info("Proxy", `SSE connection closed (Session: ${transport.sessionId})`);
+      logger.info("Proxy", `SSE connection closed (Session: ${transport.sessionId})`);
       transports.delete(transport.sessionId);
     });
   });
 
   app.post("/message", async (req, res) => {
-    Logger.debug("Proxy", `Received POST request to: ${req.originalUrl}, query:`, req.query);
+    logger.debug("Proxy", `Received POST request to: ${req.originalUrl}, query:`, req.query);
     const sessionId = req.query.sessionId as string;
     const transport = transports.get(sessionId);
     if (!transport) {
-      Logger.warn("Proxy", `Session not found for ID: ${sessionId}`);
+      logger.warn("Proxy", `Session not found for ID: ${sessionId}`);
       res.status(404).send("Session not found");
       return;
     }
@@ -61,12 +63,12 @@ async function main() {
 
   const port = initialConfig.system?.port || process.env.PORT || 3000;
   app.listen(port, () => {
-    Logger.info("Proxy", `AI Auth Gateway is running and listening on http://localhost:${port}`);
-    Logger.info("Proxy", `Connect your MCP clients to: http://localhost:${port}/sse`);
+    logger.info("Proxy", `AI Auth Gateway is running and listening on http://localhost:${port}`);
+    logger.info("Proxy", `Connect your MCP clients to: http://localhost:${port}/sse`);
   });
 }
 
 main().catch((e) => {
-  Logger.error("Proxy", `Fatal error: ${e.message}`);
+  console.error(`Fatal error: ${e.message}`);
   process.exit(1);
 });

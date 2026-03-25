@@ -2,7 +2,7 @@
 
 **AI Auth Gateway** 是一個以 TypeScript 打造的 Model Context Protocol (MCP) 代理伺服器。它可以彙總多個下游 MCP 伺服器，並安全地將機密憑證（如 JWT 或 API 金鑰）動態注入 API 請求中。這讓 AI 客戶端（例如 Claude Desktop 或 Cursor）無需在其本機設定檔中暴露敏感資料，即可安全地存取遠端外部工具。
 
-[![Version: 1.0.6](https://img.shields.io/badge/Version-1.0.6-success.svg)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/CHANGELOG.md)
+[![Version: 1.0.7](https://img.shields.io/badge/Version-1.0.7-success.svg)](https://github.com/Cyber-Sec-Space/ai-auth-gateway/blob/main/CHANGELOG.md)
 [![NPM Package](https://img.shields.io/npm/v/@cyber-sec.space/ai-auth-gateway.svg)](https://www.npmjs.com/package/@cyber-sec.space/ai-auth-gateway)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
@@ -15,6 +15,7 @@
 - 🛡️ **安全憑證管理**: 結合作業系統原生金鑰圈 (`keytar`) 與 AES-256-GCM 加密技術，提供雙層防護安全儲存並注入 API 金鑰。
 - 🔀 **協定多路復用**: 支援 `stdio`、`sse` 與 `http` 多種通訊協定無縫連接下游伺服器。
 - 🔒 **精細權限控制 (RBAC)**: 嚴格控管特定 AI 客戶端能存取哪些伺服器上的哪些特定 MCP 工具。
+- 📦 **模組化核心**: 底層採用 `@cyber-sec.space/aag-core` 核心庫建構。透過依賴注入 (Dependency Injection) 設計，允許企業輕鬆將底層替換為 Hashicorp Vault 或 DB 等商業基礎設施。
 - 🕵️ **安全稽核日誌**: 自動遮罩敏感資訊的日誌系統，完整追蹤 AI_ID 連線時間與工具執行狀態 (`logs/proxy.log`)。
 
 ---

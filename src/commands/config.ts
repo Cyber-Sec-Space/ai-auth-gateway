@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { ConfigManager } from "../config.js";
+import { FileConfigStore } from "../services/FileConfigStore.js";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import * as fs from "fs";
@@ -8,13 +8,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DEFAULT_CONFIG_PATH = path.join(__dirname, "..", "..", "mcp-proxy-config.json");
 
-function loadConfigAndManager(): { config: any, manager: ConfigManager, configPath: string } {
+function loadConfigAndManager(): { config: any, manager: FileConfigStore, configPath: string } {
   let configPath = process.env.AAG_CONFIG_PATH || DEFAULT_CONFIG_PATH;
   if (!fs.existsSync(configPath)) {
     console.error(`\x1b[31m[Error] Configuration file not found at: ${configPath}\x1b[0m`);
     process.exit(1);
   }
-  const configManager = new ConfigManager(configPath);
+  const configManager = new FileConfigStore(configPath);
   const config = configManager.load();
   return { config, manager: configManager, configPath };
 }

@@ -14,15 +14,17 @@ architecture-beta
     service cursor(desktop)[Cursor] in client
     service claude(desktop)[Claude Desktop] in client
 
-    group gateway(server)[AI Auth Gateway]
-    service proxy(server)[TCP/SSE Proxy] in gateway
-    service rbac(database)[RBAC Engine] in gateway
-    service vault(database)[Config & Keychain Vault] in gateway
+    group cli(server)[AAG-CLI (Host Config)]
+    service vault(database)[OS Keychain Vault] in cli
+    service config(database)[File Config Store] in cli
+
+    group gateway(server)[AAG-Core (Library)]
+    service proxy(server)[Proxy Engine & RBAC] in gateway
 
     group downstream(cloud)[Downstream MCP Servers]
-    service local(server)[Local stdio Server] in downstream
-    service github(server)[GitHub SSE Server] in downstream
-    service remote(server)[Remote HTTP Server] in downstream
+    service local(server)[stdio Server] in downstream
+    service github(server)[SSE Server] in downstream
+    service remote(server)[HTTP Server] in downstream
 
     cursor:R --> L:proxy
     claude:R --> L:proxy
@@ -31,7 +33,7 @@ architecture-beta
     proxy:R --> L:github
     proxy:R --> L:remote
 
-    proxy:B --> T:rbac
+    proxy:B --> T:config
     proxy:B --> T:vault
 ```
 
@@ -39,22 +41,21 @@ architecture-beta
 
 ## 2. Core Components
 
-The architecture is built on top of the official `@modelcontextprotocol/sdk` and consists of five core pillars:
+The architecture is built as a **Monorepo** on top of the official `@modelcontextprotocol/sdk`. It separates the highly reusable, OS-agnostic `@cyber-sec.space/aag-core` (Core Library) from the `ai-auth-gateway` (CLI Application) via strict Dependency Injection (`ISecretStore`, `IConfigStore`, `IAuditLogger`).
 
-### A. The Server Proxy (`src/proxy.ts` & `src/index.ts`)
-- **Transport**: Listens for incoming connections from AI Clients via Server-Sent Events (SSE).
-- **Authentication**: Validates incoming `AI_ID` and `AI_KEY` against authorized entities in the configuration.
+### A. The Server Proxy (`packages/core/src/proxy.ts`)
+- **Transport**: Listens for incoming connections from AI Clients via Server-Sent Events (SSE) or STDIO.
+- **Authentication**: Validates incoming `AI_ID` and `AI_KEY` against authorized entities via the injected `IConfigStore`.
 - **Protocol Emulation**: Intercepts standard MCP requests (`ListToolsRequestSchema`, `CallToolRequestSchema`) and multiplexes them across multiple downstream servers.
 
-### B. The Client Manager (`src/clientManager.ts`)
+### B. The Client Manager (`packages/core/src/clientManager.ts`)
 - **Multiplexing**: Manages a pool of downstream MCP clients, each connected to a different target server.
 - **Transport Support**: Supports `stdio`, `sse`, and `http` downstream transports.
 - **Lifecycle**: Handles connection, disconnection, and error recovery for downstream services.
 
-### C. The Configuration Manager (`src/config.ts`)
-- **Central Truth**: Reads and writes to `mcp-proxy-config.json` while watching for hot-reloads via `chokidar`.
-- **Master Encryption**: Generates and manages a `masterKey` used to encrypt/decrypt sensitive data passed through the OS keychain (`keytar`).
-- **Secret Resolution**: Dynamically resolves `authInjection` values, whether they are raw strings, environment variables (`$VAR`), or keychain references (`keytar://service/account`).
+### C. The Configuration Manager & Storage Interfaces
+- **Core Interfaces (`IConfigStore`, `ISecretStore`)**: The core proxy is completely agnostic to how secrets and configs are stored, making it easy to swap implementations for enterprise databases or Hashicorp Vault.
+- **CLI Implementations (Project Root)**: The main CLI application injects `FileConfigStore` (watching `mcp-proxy-config.json` via `chokidar`) and `KeychainSecretStore` (encrypting and storing via OS `keytar`) into the core.
 
 ### D. Role-Based Access Control (RBAC) Engine
 - Integrated directly into the proxy, the RBAC engine filters which tools an AI is allowed to see and call based on granular whitelists and blacklists defined per `AIKey`.
@@ -81,23 +82,23 @@ A complete command-line interface (`src/commands/`) requiring `sudo` privileges 
 ```mermaid
 sequenceDiagram
     participant AI as AI Client
-    participant GW as AI Auth Gateway
-    participant CFG as Config Manager
+    participant Core as AAG-Core (Proxy)
+    participant CFG as AAG-CLI (IConfigStore)
     participant MCP as Downstream Servers
 
-    AI->>GW: Connect to /sse
-    GW->>GW: Extract AI_ID & AI_KEY from Headers/Env
-    GW->>CFG: Validate Credentials
+    AI->>Core: Connect to /sse
+    Core->>Core: Extract AI_ID & AI_KEY from Headers/Env
+    Core->>CFG: Validate Credentials via injected store
     alt Invalid Credentials
-        CFG-->>GW: Unauthorized
-        GW-->>AI: 401 Unauthorized / Reject SSE
+        CFG-->>Core: Unauthorized
+        Core-->>AI: 401 Unauthorized / Reject SSE
     else Valid Credentials
-        CFG-->>GW: Accepted (Returns AI permissions)
-        GW->>MCP: Fetch all available tools
-        MCP-->>GW: Combined Tool List
-        GW->>GW: Filter tools via RBAC allowedTools & deniedTools
-        GW->>GW: Prefix tool names (serverId___toolName)
-        GW-->>AI: Respond with filtered, namespaced tools
+        CFG-->>Core: Accepted (Returns AI permissions)
+        Core->>MCP: Fetch all available tools
+        MCP-->>Core: Combined Tool List
+        Core->>Core: Filter tools via RBAC allowedTools & deniedTools
+        Core->>Core: Prefix tool names (serverId___toolName)
+        Core-->>AI: Respond with filtered, namespaced tools
     end
 ```
 
@@ -106,21 +107,21 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant AI as AI Client
-    participant GW as Gateway Proxy
-    participant KV as Keytar / Vault
+    participant Core as AAG-Core (Proxy)
+    participant KV as AAG-CLI (ISecretStore)
     participant MCP as Target Downstream Server
 
-    AI->>GW: CallTool(github_mcp___get_me)
-    GW->>GW: Strip prefix -> github_mcp / get_me
-    GW->>GW: Check RBAC strictly for this ID
+    AI->>Core: CallTool(github_mcp___get_me)
+    Core->>Core: Strip prefix -> github_mcp / get_me
+    Core->>Core: Check RBAC strictly for this ID
     alt Permissions Denied
-        GW-->>AI: Error: Tool access forbidden
+        Core-->>AI: Error: Tool access forbidden
     else Has Access
-        GW->>KV: Request injected auth for github_mcp
-        KV-->>GW: Returns raw API Key (e.g., bearer token)
-        GW->>MCP: Forward Request + Inject API Key secretly
-        MCP-->>GW: Return Tool Execution Result
-        GW-->>AI: Return Result
+        Core->>KV: Request injected auth for github_mcp via interface
+        KV-->>Core: ISecretStore Returns raw API Key (e.g., bearer token)
+        Core->>MCP: Forward Request + Inject API Key secretly
+        MCP-->>Core: Return Tool Execution Result
+        Core-->>AI: Return Result
     end
 ```
 
