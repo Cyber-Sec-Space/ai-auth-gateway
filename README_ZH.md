@@ -57,17 +57,17 @@ npm start
 ### 步驟二：連接您的 AI 客戶端
 要將您的 AI 客戶端（如 Claude Desktop 或 Cursor）連接至 Gateway，請提供相應的 `AI_ID` 與 `AI_KEY` 以通過身分驗證。目前有兩種主要的連接方式：
 
-**方式一：透過 STDIO 橋接器 (適用於 Claude Desktop)**
-因為 Claude Desktop 目前主要支援 `stdio` 啟動方式，您可以使用內建的橋接腳本連接到 Gateway 的 SSE 伺服器：
+**方式一：透過 STDIO 橋接 (適用於 Claude Desktop 或 Cursor 本機代理)**
+如果您希望 AI 客戶端直接在內部喚醒 Gateway，而不需要在背景執行 Daemon，請在客戶端設定中指向編譯好的 `stdio.js`：
 ```json
 {
   "mcpServers": {
     "ai-auth-gateway": {
       "command": "node",
-      "args": ["/path/to/ai_auth_gateway/build/tests/sse_client.js"],
+      "args": ["/您的絕對路徑/ai_auth_gateway/build/stdio.js"],
       "env": {
         "AI_ID": "my-ai",
-        "AI_KEY": "在_aagcli_生成的_key_hash"
+        "AI_KEY": "在_aagcli_生成的_key"
       }
     }
   }
@@ -94,13 +94,27 @@ npm start
 
 為了方便管理 Gateway 的設定、權限與金鑰，系統內建了強大的 CLI 工具。**注意：所有的 CLI 指令皆須具備 `sudo` 管理員權限。**
 
-### 1. 系統設定 (System Config)
+### 1. 背景伺服器生命週期管理 (SSE Daemon)
+若需要給外部 HTTP / 瀏覽器連線，您可以直接讓 Gateway 在背景常駐執行連線池，無需維持終端機開啟：
+（註：如透過 `stdio` 方式連線，則完全不需要啟動此背景程序）
+```bash
+# 在背景啟動 SSE Proxy 伺服器
+sudo npx aagcli sse start
+
+# 檢查背景伺服器運作狀態
+sudo npx aagcli sse status
+
+# 安全地關閉背景伺服器
+sudo npx aagcli sse stop
+```
+
+### 2. 系統設定 (System Config)
 不需要手動編輯 JSON，即可動態管理 Proxy Port 或 Log 級別。
 ```bash
 # 檢視目前的系統環境設定
 sudo npx aagcli config view
 
-# 更改 Proxy 的連線埠 (將於下次 npm start 生效)
+# 更改 Proxy 的連線埠 (將於下次伺服器啟動時生效)
 sudo npx aagcli config set port 8080
 sudo npx aagcli config set logLevel DEBUG
 ```

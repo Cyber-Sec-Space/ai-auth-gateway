@@ -94,7 +94,20 @@ If your AI client supports native SSE URLs (like configuring via Cursor's GUI or
 
 To manage your Gateway configurations, permissions, and secrets, use the built-in CLI. **All CLI commands require `sudo` privileges.**
 
-### 1. System Configuration
+### 1. Server Lifecycle Management (SSE Daemon)
+You can seamlessly run the SSE Proxy Gateway in the background without keeping a terminal open. This is only necessary if you aren't using the local `stdio` node launcher.
+```bash
+# Start the SSE server in the background
+sudo npx aagcli sse start
+
+# Check if the server is running
+sudo npx aagcli sse status
+
+# Stop the background SSE server safely
+sudo npx aagcli sse stop
+```
+
+### 2. System Configuration
 Manage proxy port or log levels dynamically without touching the JSON file.
 ```bash
 # View current settings
