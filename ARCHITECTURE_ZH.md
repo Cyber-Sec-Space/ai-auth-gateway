@@ -51,6 +51,7 @@ flowchart TD
 - **傳輸層**: 接收來自 AI 客戶端的 Server-Sent Events (SSE) 或 STDIO 連線。
 - **身份驗證**: 將傳入的 `AI_ID` 和 `AI_KEY` 透過注入的 `IConfigStore` 進行比對驗證。
 - **協定模擬**: 攔截標準 MCP 請求（如 `ListToolsRequestSchema`、`CallToolRequestSchema`）並將其分發到多個下游伺服器。
+- **中介軟體管線 (Middleware Pipeline)**: 實施了 `use()` 模式，允許在請求發送前 (`onRequest`) 或結果回傳前 (`onResponse`) 進行攔截處理。
 
 ### B. 客戶端管理器 (`@cyber-sec.space/aag-core` 套件中的 `ClientManager`)
 - **多路復用 (Multiplexing)**: 管理一個下游 MCP 客戶端池，每個客戶端皆連接著不同的目標伺服器。
@@ -76,6 +77,11 @@ flowchart TD
 - **`ai`**: 註冊 AI 客戶端、撤銷金鑰並管理精細的 RBAC 權限。
 - **`keychain`**: 將下游 API 金鑰安全地儲存在底層作業系統的加密憑證庫中。
 - **`stdio-path`**: 取得給本機 AI 客戶端連接用的 `stdio` 執行檔絕對路徑。
+
+### G. 內建中介軟體 (Built-in Middlewares)
+代理核心提供了開箱即用的防護層：
+- **RateLimitMiddleware (限流)**: 透過「權杖桶演算法 (Token Bucket)」實施每分鐘請求數 (RPM) 限制，根據 `mcp-proxy-config.json` 中的 `rateLimit` 動態調整。
+- **DataMaskingMiddleware (資料遮罩)**: 基於正則表達式攔截器，自動過濾掉下游回傳結果中的 API Keys (如 `sk-...`)、密碼或 PII 敏感資訊。
 
 ---
 
@@ -117,15 +123,21 @@ sequenceDiagram
 
     AI->>Core: CallTool 請求 (github_mcp___get_me)
     Core->>Core: 移除前綴解析目標 -> 伺服器: github_mcp / 工具: get_me
-    Core->>Core: 嚴格檢查該 AI 是否具備工具執行權限
-    alt 遭到拒絕
-        Core-->>AI: 錯誤：拒絕存取，權限不足
-    else 允許存取
-        Core->>KV: 請求讀取 github_mcp 指定的注入金鑰
-        KV-->>Core: ISecretStore 解密並回傳原始的連線令牌
-        Core->>MCP: 秘密地將金鑰注入 HTTP 標頭或環境變數並轉發請求
-        MCP-->>Core: 回傳外部 API 的真實執行結果
-        Core-->>AI: 將結果安全轉發回上游 AI
+    Core->>Core: [Middleware] 執行 RateLimitMiddleware 檢查餘額
+    alt 限流觸發
+        Core-->>AI: 錯誤：超出請求頻率限制 (Rate limit exceeded)
+    else 檢查通過
+        Core->>Core: 嚴格檢查該 AI 是否具備工具執行權限
+        alt 遭到拒絕
+            Core-->>AI: 錯誤：拒絕存取，權限不足
+        else 允許存取
+            Core->>KV: 請求讀取 github_mcp 指定的注入金鑰
+            KV-->>Core: ISecretStore 解密並回傳原始的連線令牌
+            Core->>MCP: 秘密地將金鑰注入 HTTP 標頭或環境變數並轉發請求
+            MCP-->>Core: 回傳外部 API 的真實執行結果
+            Core->>Core: [Middleware] 執行 DataMaskingMiddleware 遮罩敏感內容
+            Core-->>AI: 將結果安全轉發回上游 AI
+        end
     end
 ```
 

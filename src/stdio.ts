@@ -1,5 +1,7 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { ClientManager, ProxyServer } from "@cyber-sec.space/aag-core";
+import { ClientManager, ProxyServer } from "@cyber-sec.space/aag-core/build/index.js";
+import { DataMaskingMiddleware } from "@cyber-sec.space/aag-core/build/middleware/dataMasking.js";
+import { RateLimitMiddleware } from "@cyber-sec.space/aag-core/build/middleware/rateLimit.js";
 import { FileConfigStore } from "./services/FileConfigStore.js";
 import { KeychainSecretStore } from "./services/KeychainSecretStore.js";
 import { ConsoleAuditLogger } from "./services/ConsoleAuditLogger.js";
@@ -24,6 +26,8 @@ async function main() {
   
   const clientManager = new ClientManager(configStore, secretStore, logger);
   const proxy = new ProxyServer(clientManager, configStore, secretStore, logger);
+  proxy.use(new DataMaskingMiddleware([/sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], '***[MASKED]***'));
+  proxy.use(new RateLimitMiddleware(50, 60000, configStore));
 
   const initialConfig = configStore.load();
   await clientManager.syncConfig(initialConfig);

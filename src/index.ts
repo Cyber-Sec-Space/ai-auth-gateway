@@ -2,6 +2,8 @@ import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
 import cors from "cors";
 import { ClientManager, ProxyServer } from "@cyber-sec.space/aag-core";
+import { DataMaskingMiddleware } from "@cyber-sec.space/aag-core/build/middleware/dataMasking.js";
+import { RateLimitMiddleware } from "@cyber-sec.space/aag-core/build/middleware/rateLimit.js";
 import { FileConfigStore } from "./services/FileConfigStore.js";
 import { KeychainSecretStore } from "./services/KeychainSecretStore.js";
 import { ConsoleAuditLogger } from "./services/ConsoleAuditLogger.js";
@@ -16,7 +18,7 @@ async function main() {
   const configStore = new FileConfigStore(configPath);
   const secretStore = new KeychainSecretStore(configStore);
   const logger = new ConsoleAuditLogger();
-  
+
   const clientManager = new ClientManager(configStore, secretStore, logger);
   const proxy = new ProxyServer(clientManager, configStore, secretStore, logger);
 
@@ -39,8 +41,10 @@ async function main() {
     const absoluteEndpoint = `${req.protocol}://${req.get("host")}/message`;
     const transport = new SSEServerTransport(absoluteEndpoint, res);
     transports.set(transport.sessionId, transport);
-    
+
     const sessionProxy = new ProxyServer(clientManager, configStore, secretStore, logger);
+    sessionProxy.use(new DataMaskingMiddleware([/sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], '***[MASKED]***'));
+    sessionProxy.use(new RateLimitMiddleware(50, 60000, configStore));
     await sessionProxy.server.connect(transport);
 
     res.on("close", () => {

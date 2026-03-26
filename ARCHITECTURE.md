@@ -51,6 +51,7 @@ The architecture is built as a **Monorepo** on top of the official `@modelcontex
 - **Transport**: Listens for incoming connections from AI Clients via Server-Sent Events (SSE) or STDIO.
 - **Authentication**: Validates incoming `AI_ID` and `AI_KEY` against authorized entities via the injected `IConfigStore`.
 - **Protocol Emulation**: Intercepts standard MCP requests (`ListToolsRequestSchema`, `CallToolRequestSchema`) and multiplexes them across multiple downstream servers.
+- **Middleware Pipeline**: Implements a `use()` pattern allowing interception and mutation during the `onRequest` and `onResponse` phases.
 
 ### B. The Client Manager (`ClientManager` in `@cyber-sec.space/aag-core`)
 - **Multiplexing**: Manages a pool of downstream MCP clients, each connected to a different target server.
@@ -76,6 +77,11 @@ A complete command-line interface (`src/commands/`) requiring `sudo` privileges 
 - **`ai`**: Register AI clients, revoke keys, and manage granular RBAC permissions.
 - **`keychain`**: Securely store downstream API keys directly in the host OS's secure storage.
 - **`stdio-path`**: Resolves the absolute path of the compiled `stdio.js` script for local AI clients.
+
+### G. Built-in Middleware
+The core library provides out-of-the-box protection layers:
+- **RateLimitMiddleware**: Enforces requests per minute (RPM) limits via a "Token Bucket" algorithm, dynamically reading from the `rateLimit` configuration in `mcp-proxy-config.json`.
+- **DataMaskingMiddleware**: Uses RegEx-based interceptors to automatically filter out API Keys (e.g., `sk-...`), passwords, or PII from downstream tool results.
 
 ---
 
@@ -117,15 +123,21 @@ sequenceDiagram
 
     AI->>Core: CallTool(github_mcp___get_me)
     Core->>Core: Strip prefix -> github_mcp / get_me
-    Core->>Core: Check RBAC strictly for this ID
-    alt Permissions Denied
-        Core-->>AI: Error: Tool access forbidden
-    else Has Access
-        Core->>KV: Request injected auth for github_mcp via interface
-        KV-->>Core: ISecretStore Returns raw API Key (e.g., bearer token)
-        Core->>MCP: Forward Request + Inject API Key secretly
-        MCP-->>Core: Return Tool Execution Result
-        Core-->>AI: Return Result
+    Core->>Core: [Middleware] Execute RateLimitMiddleware check
+    alt Rate Limit Exceeded
+        Core-->>AI: Error: Rate limit exceeded
+    else Check Passed
+        Core->>Core: Check RBAC strictly for this ID
+        alt Permissions Denied
+            Core-->>AI: Error: Tool access forbidden
+        else Has Access
+            Core->>KV: Request injected auth for github_mcp via interface
+            KV-->>Core: ISecretStore Returns raw API Key (e.g., bearer token)
+            Core->>MCP: Forward Request + Inject API Key secretly
+            MCP-->>Core: Return Tool Execution Result
+            Core->>Core: [Middleware] Execute DataMaskingMiddleware to sanitize output
+            Core-->>AI: Return Result
+        end
     end
 ```
 

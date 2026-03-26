@@ -70,6 +70,26 @@ export function registerAiCommand(program: Command) {
       console.log(`Access for AI ID '${aiid}' has been revoked.`);
     });
 
+  ai.command("ratelimit <aiid> <rpm>")
+    .description("Set rate limit (Requests Per Minute) for an AI ID")
+    .action((aiid, rpm) => {
+      const config = loadConfig();
+      if (!config.aiKeys || !config.aiKeys[aiid]) {
+        console.error(`AI ID '${aiid}' not found.`);
+        return;
+      }
+      
+      const rate = parseInt(rpm);
+      if (isNaN(rate)) {
+        console.error("Invalid RPM value. Must be a number.");
+        return;
+      }
+
+      config.aiKeys[aiid].rateLimit = { rpm: rate };
+      saveConfig(config);
+      console.log(`Rate limit for AI ID '${aiid}' set to ${rate} RPM.`);
+    });
+
   ai.command("list")
     .description("List all registered AI IDs and their permissions")
     .action(() => {
@@ -83,7 +103,8 @@ export function registerAiCommand(program: Command) {
                 "Allowed Servers": (perms.allowedServers || []).join(", ") || "*",
                 "Denied Servers": (perms.deniedServers || []).join(", ") || "none",
                 "Allowed Tools": (perms.allowedTools || []).join(", ") || "*",
-                "Denied Tools": (perms.deniedTools || []).join(", ") || "none"
+                "Denied Tools": (perms.deniedTools || []).join(", ") || "none",
+                "Rate Limit": data.rateLimit?.rpm ? `${data.rateLimit.rpm} RPM` : (data.rateLimit?.rph ? `${data.rateLimit.rph} RPH` : "50 RPM (Default)")
             };
         });
         console.table(tableData);
