@@ -20,9 +20,6 @@
 - 📦 **模組化核心**: 底層採用 `@cyber-sec.space/aag-core` 核心庫建構。透過依賴注入 (Dependency Injection) 設計，允許企業輕鬆將底層替換為 Hashicorp Vault 或 DB 等商業基礎設施。
 - 🕵️ **安全稽核日誌**: 自動遮罩敏感資訊的日誌系統，完整追蹤 AI_ID 連線時間與工具執行狀態 (`logs/proxy.log`)。
 
-### 核心架構圖 (Architecture)
-![AAG v1.0.8 架構設計圖](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
-
 
 ---
 

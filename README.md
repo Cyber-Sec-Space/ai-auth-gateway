@@ -20,9 +20,6 @@ The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built wit
 - 📦 **Modular Core**: Built on top of the `@cyber-sec.space/aag-core` library. Fully dependency-injected for easy enterprise adoption (e.g. replacing Keytar with Hashicorp Vault).
 - 🕵️ **Auditing & Logging**: Masked and secured logs track AIID, connection times, and tool execution status (`logs/proxy.log`).
 
-### Architecture Visualization
-![AAG v1.0.8 Architecture Diagram](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
-
 
 ---
 
