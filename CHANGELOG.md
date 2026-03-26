@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.7] - 2026-03-26
 ### Architecture & Modularization
 - **Changed**: Refactored the codebase into an NPM Workspace monorepo. Extracted the core proxy logic into a permissive, OS-agnostic library (`@cyber-sec.space/aag-core`) utilizing dependency injection (`ISecretStore`, `IConfigStore`, `IAuditLogger`).
+- **Changed**: Finalized the `AAG-Core` extraction by removing local workspace coupling and transitioning the CLI to depend on the officially published `@cyber-sec.space/aag-core` NPM package.
 - **Changed**: The CLI application now serves as the primary consumer of the core library, supplying OS-specific integrations (Keychain, File System) to the core.
 - **Documentation**: Updated Architecture flowcharts and sequence diagrams (English and Chinese) to visually distinguish between the newly separated `AAG-Core` library and the `CLI` host application.
 - **Fixed**: Corrected the `aagcli stdio-path` runtime path resolution after structural realignment.

@@ -1,19 +1,15 @@
 {
   "name": "@cyber-sec.space/ai-auth-gateway",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A Model Context Protocol (MCP) Proxy Gateway for secure AI tool execution, built with TypeScript, RBAC, and OS Keychain integration.",
   "main": "build/index.js",
   "bin": {
     "aagcli": "build/cli.js"
   },
-  "workspaces": [
-    "packages/*"
-  ],
+
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:core": "npm run build --workspace=@cyber-sec.space/aag-core",
-    "build:cli": "tsc",
-    "build": "npm run build:core && npm run build:cli",
+    "build": "tsc",
     "start": "node build/index.js",
     "aagcli": "node build/cli.js"
   },
