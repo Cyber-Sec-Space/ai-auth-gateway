@@ -51,6 +51,9 @@
         "deniedTools": [
           "local_database___drop_table"
         ]
+      },
+      "rateLimit": {
+        "rpm": 50
       }
     }
   }

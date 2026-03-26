@@ -21,6 +21,8 @@ flowchart TD
     end
 
     subgraph gateway ["AAG-Core (Library)"]
+        direction TB
+        mid["Middleware Pipeline (Rate Limit & Masking)"]
         proxy["Proxy Engine & RBAC"]
     end
 
@@ -30,8 +32,9 @@ flowchart TD
         remote_s["HTTP Server"]
     end
 
-    cursor --> proxy
-    claude --> proxy
+    cursor --> mid
+    claude --> mid
+    mid --> proxy
 
     proxy --> local_s
     proxy --> github_s

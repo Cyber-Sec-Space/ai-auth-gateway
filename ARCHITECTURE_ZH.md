@@ -21,6 +21,8 @@ flowchart TD
     end
 
     subgraph gateway ["AAG-Core (核心函數庫)"]
+        direction TB
+        mid["Middleware 護欄管線 (限流 & 遮罩)"]
         proxy["Proxy 轉發與 RBAC 控制引擎"]
     end
 
@@ -30,8 +32,9 @@ flowchart TD
         remote_s["自訂 HTTP 伺服器"]
     end
 
-    cursor --> proxy
-    claude --> proxy
+    cursor --> mid
+    claude --> mid
+    mid --> proxy
 
     proxy --> local_s
     proxy --> github_s
