@@ -10,7 +10,7 @@
 
 ```mermaid
 flowchart TD
-    subgraph client ["上游 AI 客戶端"]
+    subgraph client ["上遊 AI 客戶端"]
         cursor["Cursor"]
         claude["Claude Desktop"]
     end
@@ -21,9 +21,11 @@ flowchart TD
     end
 
     subgraph gateway ["AAG-Core (核心函數庫)"]
-        direction TB
-        mid["Middleware 護欄管線 (限流 & 遮罩)"]
-        proxy["Proxy 轉發與 RBAC 控制引擎"]
+        subgraph proxy_p ["Proxy 處理管線"]
+            mw["中介軟體 (限流、遮罩)"]
+            rbac["RBAC 與 路由引擎"]
+            mw --> rbac
+        end
     end
 
     subgraph downstream ["下游 MCP 伺服器"]
@@ -32,17 +34,20 @@ flowchart TD
         remote_s["自訂 HTTP 伺服器"]
     end
 
-    cursor --> mid
-    claude --> mid
-    mid --> proxy
+    cursor --> mw
+    claude --> mw
 
-    proxy --> local_s
-    proxy --> github_s
-    proxy --> remote_s
+    rbac --> local_s
+    rbac --> github_s
+    rbac --> remote_s
 
-    proxy -.-> config
-    proxy -.-> vault
+    rbac -.-> config
+    rbac -.-> vault
 ```
+
+### 精美架構視覺化圖表 (v1.0.8)
+![AAG v1.0.8 架構設計圖](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
+
 
 ---
 

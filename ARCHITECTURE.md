@@ -21,9 +21,11 @@ flowchart TD
     end
 
     subgraph gateway ["AAG-Core (Library)"]
-        direction TB
-        mid["Middleware Pipeline (Rate Limit & Masking)"]
-        proxy["Proxy Engine & RBAC"]
+        subgraph proxy_p ["Proxy Pipeline"]
+            mw["Middlewares (Rate Limit, Masking)"]
+            rbac["RBAC & Routing Engine"]
+            mw --> rbac
+        end
     end
 
     subgraph downstream ["Downstream MCP Servers"]
@@ -32,17 +34,20 @@ flowchart TD
         remote_s["HTTP Server"]
     end
 
-    cursor --> mid
-    claude --> mid
-    mid --> proxy
+    cursor --> mw
+    claude --> mw
 
-    proxy --> local_s
-    proxy --> github_s
-    proxy --> remote_s
+    rbac --> local_s
+    rbac --> github_s
+    rbac --> remote_s
 
-    proxy -.-> config
-    proxy -.-> vault
+    rbac -.-> config
+    rbac -.-> vault
 ```
+
+### Premium Architecture Visualization (v1.0.8)
+![AAG v1.0.8 Architecture Diagram](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
+
 
 ---
 

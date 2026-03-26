@@ -14,8 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Changed**: Enhanced `aagcli ai list` to display active Rate Limit status per AI client.
 - **Fixed**: Hardened the proxy's `X-Powered-By` header to mitigate Information Exposure (CWE-200).
 - **Security**: Upgraded the core engine to support **Auto-Reconnect** (Exponential Backoff) and **Fail-Fast Defense** for dropped downstream connections.
-- **Documentation**: Updated high-level architecture flowcharts and sequence diagrams in both English and Chinese to reflect the new Middleware Pipeline.
-- **Samples**: Added `rateLimit` field to `mcp-proxy-config.sample.json`.
+- **Documentation**: Updated Architecture flowcharts (Mermaid) and embedded a new premium **v1.0.8 Architecture Visualization** summarizing the Middleware Pipeline.
 
 ## [1.0.7] - 2026-03-26
 ### Architecture & Modularization
