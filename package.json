@@ -40,7 +40,7 @@
     "mcp-proxy-config.sample.json"
   ],
   "dependencies": {
-    "@cyber-sec.space/aag-core": "^1.0.3",
+    "@cyber-sec.space/aag-core": "^2.0.0",
     "@hackolade/keytar": "^7.9.0-7",
     "chokidar": "^5.0.0",
     "commander": "^14.0.3",
