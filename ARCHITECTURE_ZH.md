@@ -45,10 +45,6 @@ flowchart TD
     rbac -.-> vault
 ```
 
-### 精美架構視覺化圖表 (v1.0.8)
-![AAG v1.0.8 架構設計圖](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
-
-
 ---
 
 ## 2. 核心組件
