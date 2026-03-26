@@ -12,7 +12,23 @@
     "start": "node build/index.js",
     "aagcli": "node build/cli.js"
   },
-  "keywords": [],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "proxy",
+    "gateway",
+    "rbac",
+    "security",
+    "llm",
+    "agent",
+    "claude-desktop",
+    "cursor",
+    "rate-limiting",
+    "data-masking",
+    "token-bucket",
+    "keychain"
+  ],
   "author": "Cyber-Sec-Space",
   "license": "AGPL-3.0",
   "type": "module",
@@ -24,7 +40,7 @@
     "mcp-proxy-config.sample.json"
   ],
   "dependencies": {
-    "@cyber-sec.space/aag-core": "^1.0.2",
+    "@cyber-sec.space/aag-core": "^1.0.3",
     "@hackolade/keytar": "^7.9.0-7",
     "chokidar": "^5.0.0",
     "commander": "^14.0.3",

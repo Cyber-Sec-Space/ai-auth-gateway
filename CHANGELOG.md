@@ -8,12 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.8] - 2026-03-26
 ### Security & Proxy Intelligence
-- **Added**: Integrated **In-Memory Rate Limiting** from `@cyber-sec.space/aag-core@1.0.2`. All tool calls are now subject to a Token Bucket-based governor.
-- **Added**: Introduced `aagcli ai ratelimit <aiid> <rpm>` command to dynamically adjust request quotas per AI ID.
+- **Added**: Integrated **Zero-Latency In-Memory Rate Limiting** from `@cyber-sec.space/aag-core@1.0.3`. The Token Bucket governor now utilizes pure in-memory `getConfig()` lookups, resolving potential disk I/O bottlenecks.
+- **Added**: Upgraded `aagcli ai ratelimit <aiid> <rate> [unit]` command. Administrators can now dynamically assign quotas using `rpm` (per minute), `rph` (per hour), or `default` to reset restrictions.
 - **Added**: Integrated **Data Masking Middleware**, automatically sanitizing PII and API keys from downstream MCP responses.
 - **Changed**: Enhanced `aagcli ai list` to display active Rate Limit status per AI client.
 - **Fixed**: Hardened the proxy's `X-Powered-By` header to mitigate Information Exposure (CWE-200).
 - **Security**: Upgraded the core engine to support **Auto-Reconnect** (Exponential Backoff) and **Fail-Fast Defense** for dropped downstream connections.
+- **Documentation**: Updated Architecture flowcharts (Mermaid) and embedded a new premium **v1.0.8 Architecture Visualization** summarizing the Middleware Pipeline.
 
 ## [1.0.7] - 2026-03-26
 ### Architecture & Modularization

@@ -70,24 +70,40 @@ export function registerAiCommand(program: Command) {
       console.log(`Access for AI ID '${aiid}' has been revoked.`);
     });
 
-  ai.command("ratelimit <aiid> <rpm>")
-    .description("Set rate limit (Requests Per Minute) for an AI ID")
-    .action((aiid, rpm) => {
+  ai.command("ratelimit <aiid> <rate> [unit]")
+    .description("Set rate limit for an AI ID. Examples: '100 rpm', '500 rph'. Use 'default' to reset.")
+    .action((aiid, rateStr, unit) => {
       const config = loadConfig();
       if (!config.aiKeys || !config.aiKeys[aiid]) {
         console.error(`AI ID '${aiid}' not found.`);
         return;
       }
       
-      const rate = parseInt(rpm);
+      if (rateStr.toLowerCase() === 'default') {
+          delete config.aiKeys[aiid].rateLimit;
+          saveConfig(config);
+          console.log(`Rate limit for AI ID '${aiid}' has been reset to default.`);
+          return;
+      }
+
+      const rate = parseInt(rateStr);
       if (isNaN(rate)) {
-        console.error("Invalid RPM value. Must be a number.");
+        console.error("Invalid rate value. Must be a number or 'default'.");
         return;
       }
 
-      config.aiKeys[aiid].rateLimit = { rpm: rate };
+      const timeUnit = (unit || "rpm").toLowerCase();
+      if (timeUnit === "rpm") {
+          config.aiKeys[aiid].rateLimit = { rpm: rate };
+      } else if (timeUnit === "rph") {
+          config.aiKeys[aiid].rateLimit = { rph: rate };
+      } else {
+          console.error("Invalid unit. Use 'rpm' or 'rph'.");
+          return;
+      }
+
       saveConfig(config);
-      console.log(`Rate limit for AI ID '${aiid}' set to ${rate} RPM.`);
+      console.log(`Rate limit for AI ID '${aiid}' set to ${rate} ${timeUnit.toUpperCase()}.`);
     });
 
   ai.command("list")

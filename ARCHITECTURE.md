@@ -21,7 +21,11 @@ flowchart TD
     end
 
     subgraph gateway ["AAG-Core (Library)"]
-        proxy["Proxy Engine & RBAC"]
+        subgraph proxy_p ["Proxy Pipeline"]
+            mw["Middlewares (Rate Limit, Masking)"]
+            rbac["RBAC & Routing Engine"]
+            mw --> rbac
+        end
     end
 
     subgraph downstream ["Downstream MCP Servers"]
@@ -30,16 +34,20 @@ flowchart TD
         remote_s["HTTP Server"]
     end
 
-    cursor --> proxy
-    claude --> proxy
+    cursor --> mw
+    claude --> mw
 
-    proxy --> local_s
-    proxy --> github_s
-    proxy --> remote_s
+    rbac --> local_s
+    rbac --> github_s
+    rbac --> remote_s
 
-    proxy -.-> config
-    proxy -.-> vault
+    rbac -.-> config
+    rbac -.-> vault
 ```
+
+### Premium Architecture Visualization (v1.0.8)
+![AAG v1.0.8 Architecture Diagram](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
+
 
 ---
 
@@ -80,7 +88,7 @@ A complete command-line interface (`src/commands/`) requiring `sudo` privileges 
 
 ### G. Built-in Middleware
 The core library provides out-of-the-box protection layers:
-- **RateLimitMiddleware**: Enforces requests per minute (RPM) limits via a "Token Bucket" algorithm, dynamically reading from the `rateLimit` configuration in `mcp-proxy-config.json`.
+- **RateLimitMiddleware**: Enforces Requests Per Minute (RPM) or Per Hour (RPH) limits via a "Token Bucket" algorithm. Optimized via zero-latency in-memory cache reads (`getConfig()`), reacting dynamically to `mcp-proxy-config.json` changes without disk I/O.
 - **DataMaskingMiddleware**: Uses RegEx-based interceptors to automatically filter out API Keys (e.g., `sk-...`), passwords, or PII from downstream tool results.
 
 ---
@@ -123,7 +131,7 @@ sequenceDiagram
 
     AI->>Core: CallTool(github_mcp___get_me)
     Core->>Core: Strip prefix -> github_mcp / get_me
-    Core->>Core: [Middleware] Execute RateLimitMiddleware check
+    Core->>Core: [Middleware] Execute RateLimitMiddleware (Memory Cache) check
     alt Rate Limit Exceeded
         Core-->>AI: Error: Rate limit exceeded
     else Check Passed

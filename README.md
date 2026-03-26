@@ -20,6 +20,10 @@ The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built wit
 - 📦 **Modular Core**: Built on top of the `@cyber-sec.space/aag-core` library. Fully dependency-injected for easy enterprise adoption (e.g. replacing Keytar with Hashicorp Vault).
 - 🕵️ **Auditing & Logging**: Masked and secured logs track AIID, connection times, and tool execution status (`logs/proxy.log`).
 
+### Architecture Visualization
+![AAG v1.0.8 Architecture Diagram](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
+
+
 ---
 
 ## 🚀 Installation
@@ -156,8 +160,11 @@ sudo npx aagcli ai list
 # Allow 'my-new-agent' to use only a specific github tool
 sudo npx aagcli ai permit my-new-agent --tool github_mcp___get_me
 
-# Set rate limit for 'my-new-agent' to 100 RPM
-sudo npx aagcli ai ratelimit my-new-agent 100
+# Set rate limit for 'my-new-agent' to 100 RPM or 500 RPH
+sudo npx aagcli ai ratelimit my-new-agent 100 rpm
+
+# Instantly reset the rate limit to global defaults
+sudo npx aagcli ai ratelimit my-new-agent default
 ```
 
 ### 4. MCP Discovery

@@ -20,6 +20,10 @@
 - 📦 **模組化核心**: 底層採用 `@cyber-sec.space/aag-core` 核心庫建構。透過依賴注入 (Dependency Injection) 設計，允許企業輕鬆將底層替換為 Hashicorp Vault 或 DB 等商業基礎設施。
 - 🕵️ **安全稽核日誌**: 自動遮罩敏感資訊的日誌系統，完整追蹤 AI_ID 連線時間與工具執行狀態 (`logs/proxy.log`)。
 
+### 核心架構圖 (Architecture)
+![AAG v1.0.8 架構設計圖](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
+
+
 ---
 
 ## 🚀 系統安裝
@@ -157,8 +161,11 @@ sudo npx aagcli ai list
 # 開放 'my-new-agent' 只能使用 GitHub 的 get_me 工具
 sudo npx aagcli ai permit my-new-agent --tool github_mcp___get_me
 
-# 設定 'my-new-agent' 的限流為每分鐘 100 次
-sudo npx aagcli ai ratelimit my-new-agent 100
+# 設定 'my-new-agent' 的限流為每分鐘 100 次 (rpm) 或每小時 500 次 (rph)
+sudo npx aagcli ai ratelimit my-new-agent 100 rpm
+
+# 一鍵重置該 AI 的專屬限流回到全域預設值
+sudo npx aagcli ai ratelimit my-new-agent default
 ```
 
 ### 4. MCP 在線探索 (Discovery)
