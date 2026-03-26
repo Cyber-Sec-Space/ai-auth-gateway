@@ -24,12 +24,29 @@ async function main() {
   const secretStore = new KeychainSecretStore(configStore);
   const logger = new ConsoleAuditLogger();
   
+  const aiId = process.env.AI_ID;
+  const aiKey = process.env.AI_KEY;
+
+  if (!aiId || !aiKey) {
+    console.error("Fatal error: Missing AI_ID or AI_KEY in environment variables.");
+    process.exit(1);
+  }
+
+  const initialConfig = configStore.load(); // Load upfront for synchronous auth check
+  const keyEntry = initialConfig?.aiKeys?.[aiId];
+  if (!keyEntry || keyEntry.revoked || keyEntry.key !== aiKey) {
+    console.error(`Fatal error: Authentication failed for AI ID '${aiId}'. Invalid credentials or revoked key.`);
+    process.exit(1);
+  }
+
   const clientManager = new ClientManager(configStore, secretStore, logger);
-  const proxy = new ProxyServer(clientManager, configStore, secretStore, logger);
+  const proxy = new ProxyServer(clientManager, configStore, secretStore, logger, {
+      aiId: aiId,
+      disableEnvFallback: true
+  });
   proxy.use(new DataMaskingMiddleware([/sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], '***[MASKED]***'));
   proxy.use(new RateLimitMiddleware(50, 60000, configStore));
 
-  const initialConfig = configStore.load();
   await clientManager.syncConfig(initialConfig);
 
   configStore.watch();
