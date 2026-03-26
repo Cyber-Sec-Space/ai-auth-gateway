@@ -100,21 +100,19 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant AI as AI 客戶端
-    participant Core as AAG-Core (代理核心)
-    participant CFG as AAG-CLI (IConfigStore 介面)
+    participant GW as AAG Gateway (HTTP/CLI)
+    participant Core as AAG-Core (ProxySession)
     participant MCP as 下游伺服器群
 
-    AI->>Core: 連接至 /sse (探索工具清單)
-    Core->>Core: 攔截並擷取 AI_ID & AI_KEY
-    Core->>CFG: 透過注入介面驗證連線憑證
+    AI->>GW: 連接至 /sse (Headers: x-ai-id, x-ai-key)
+    GW->>GW: 透過 Store 驗證連線憑證
     alt 憑證無效
-        CFG-->>Core: 未授權
-        Core-->>AI: 401 Unauthorized / 中斷連線
+        GW-->>AI: 401 Unauthorized / 中斷連線
     else 憑證正確有效
-        CFG-->>Core: 通過驗證 (回傳該 AI 權限)
-        Core->>MCP: 取得所有在線伺服器的可用工具
+        GW->>Core: 綁定代理會話 ProxySession({ aiId: 'tenant', disableEnvFallback: true })
+        Core->>MCP: 就時喚醒下游 (JIT) 並取得可用工具
         MCP-->>Core: 回傳未過濾的工具總表
-        Core->>Core: 依據 RBAC (allowedTools) 刪除無權限的工具
+        Core->>Core: 依據 RBAC 刪除無權限的工具
         Core->>Core: 將工具名稱加上前綴 (例如 server___tool)
         Core-->>AI: 傳回篩選後、安全隔離的工具清單
     end
@@ -125,11 +123,12 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant AI as AI 客戶端
-    participant Core as AAG-Core (代理核心)
+    participant Core as AAG-Core (ProxySession)
     participant KV as AAG-CLI (ISecretStore 介面)
     participant MCP as 目標下游伺服器
 
     AI->>Core: CallTool 請求 (github_mcp___get_me)
+    Core->>Core: 驗證多租戶身分綁定 (aiId Natively Bound)
     Core->>Core: 移除前綴解析目標 -> 伺服器: github_mcp / 工具: get_me
     Core->>Core: [Middleware] 執行 RateLimitMiddleware (Memory Cache) 檢查餘額
     alt 限流觸發
@@ -138,13 +137,14 @@ sequenceDiagram
         Core->>Core: 嚴格檢查該 AI 是否具備工具執行權限
         alt 遭到拒絕
             Core-->>AI: 錯誤：拒絕存取，權限不足
-        else 允許存取
-            Core->>KV: 請求讀取 github_mcp 指定的注入金鑰
-            KV-->>Core: ISecretStore 解密並回傳原始的連線令牌
-            Core->>MCP: 秘密地將金鑰注入 HTTP 標頭或環境變數並轉發請求
-            MCP-->>Core: 回傳外部 API 的真實執行結果
-            Core->>Core: [Middleware] 執行 DataMaskingMiddleware 遮罩敏感內容
-            Core-->>AI: 將結果安全轉發回上游 AI
+        else 驗證通過具備權限
+            Core->>MCP: 就時喚醒下游伺服器連線 (JIT)
+            Core->>KV: 要求解析隱藏注入的 API 金鑰
+            KV-->>Core: 回傳原生金鑰字串 (如從 macOS Keychain)
+            Core->>MCP: 夾帶金鑰與參數轉發請求至下游 Tool
+            MCP-->>Core: 回傳工具執行結果
+            Core->>Core: [Middleware] 執行 DataMaskingMiddleware 脫敏輸出
+            Core-->>AI: 傳回安全遮罩後的最終結果
         end
     end
 ```
