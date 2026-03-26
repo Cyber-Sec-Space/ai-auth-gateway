@@ -6,14 +6,10 @@
   "bin": {
     "aagcli": "build/cli.js"
   },
-  "workspaces": [
-    "packages/*"
-  ],
+
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:core": "npm run build --workspace=@cyber-sec.space/aag-core",
-    "build:cli": "tsc",
-    "build": "npm run build:core && npm run build:cli",
+    "build": "tsc",
     "start": "node build/index.js",
     "aagcli": "node build/cli.js"
   },

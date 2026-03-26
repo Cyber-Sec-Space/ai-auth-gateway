@@ -47,12 +47,12 @@ flowchart TD
 
 此架構採用 **NPM Workspace (Monorepo)** 建立於官方 `@modelcontextprotocol/sdk` 之上。透過嚴格的依賴注入 (`ISecretStore`、`IConfigStore`、`IAuditLogger`)，系統將高重用性、與作業系統無關的 `@cyber-sec.space/aag-core` (核心函式庫) 與 `ai-auth-gateway` (CLI 主程式) 完全分離。
 
-### A. 代理伺服器核心 (`packages/core/src/proxy.ts`)
+### A. 代理伺服器核心 (`@cyber-sec.space/aag-core` 套件中的 `ProxyServer`)
 - **傳輸層**: 接收來自 AI 客戶端的 Server-Sent Events (SSE) 或 STDIO 連線。
 - **身份驗證**: 將傳入的 `AI_ID` 和 `AI_KEY` 透過注入的 `IConfigStore` 進行比對驗證。
 - **協定模擬**: 攔截標準 MCP 請求（如 `ListToolsRequestSchema`、`CallToolRequestSchema`）並將其分發到多個下游伺服器。
 
-### B. 客戶端管理器 (`packages/core/src/clientManager.ts`)
+### B. 客戶端管理器 (`@cyber-sec.space/aag-core` 套件中的 `ClientManager`)
 - **多路復用 (Multiplexing)**: 管理一個下游 MCP 客戶端池，每個客戶端皆連接著不同的目標伺服器。
 - **傳輸支援**: 支援使用 `stdio`、`sse` 以及 `http` 與下游進行通訊。
 - **生命週期**: 處理下游服務的連線、斷線及錯誤復原。

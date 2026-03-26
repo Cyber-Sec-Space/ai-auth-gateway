@@ -47,12 +47,12 @@ flowchart TD
 
 The architecture is built as a **Monorepo** on top of the official `@modelcontextprotocol/sdk`. It separates the highly reusable, OS-agnostic `@cyber-sec.space/aag-core` (Core Library) from the `ai-auth-gateway` (CLI Application) via strict Dependency Injection (`ISecretStore`, `IConfigStore`, `IAuditLogger`).
 
-### A. The Server Proxy (`packages/core/src/proxy.ts`)
+### A. The Server Proxy (`ProxyServer` in `@cyber-sec.space/aag-core`)
 - **Transport**: Listens for incoming connections from AI Clients via Server-Sent Events (SSE) or STDIO.
 - **Authentication**: Validates incoming `AI_ID` and `AI_KEY` against authorized entities via the injected `IConfigStore`.
 - **Protocol Emulation**: Intercepts standard MCP requests (`ListToolsRequestSchema`, `CallToolRequestSchema`) and multiplexes them across multiple downstream servers.
 
-### B. The Client Manager (`packages/core/src/clientManager.ts`)
+### B. The Client Manager (`ClientManager` in `@cyber-sec.space/aag-core`)
 - **Multiplexing**: Manages a pool of downstream MCP clients, each connected to a different target server.
 - **Transport Support**: Supports `stdio`, `sse`, and `http` downstream transports.
 - **Lifecycle**: Handles connection, disconnection, and error recovery for downstream services.
