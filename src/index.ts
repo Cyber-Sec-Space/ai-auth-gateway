@@ -38,11 +38,35 @@ async function main() {
 
   app.get("/sse", async (req, res) => {
     logger.info("Proxy", "New SSE connection established");
+    
+    // aag-core v2.0.0 multi-tenant authentication extraction
+    const aiid = req.headers["x-ai-id"] as string;
+    const key = req.headers["x-ai-key"] as string;
+
+    if (!aiid || !key) {
+      logger.warn("Proxy", "SSE Authentication failed: Missing x-ai-id or x-ai-key headers");
+      res.status(401).send("Authentication required: Please provide x-ai-id and x-ai-key headers.");
+      return;
+    }
+
+    const config = configStore.getConfig();
+    const keyEntry = config?.aiKeys?.[aiid];
+    
+    if (!keyEntry || keyEntry.revoked || keyEntry.key !== key) {
+      logger.warn("Proxy", `SSE Authentication failed for AIID '${aiid}'`);
+      res.status(403).send("Forbidden: Invalid credentials or revoked key.");
+      return;
+    }
+
     const absoluteEndpoint = `${req.protocol}://${req.get("host")}/message`;
     const transport = new SSEServerTransport(absoluteEndpoint, res);
     transports.set(transport.sessionId, transport);
 
-    const sessionProxy = new ProxyServer(clientManager, configStore, secretStore, logger);
+    // Bind authenticated SaaS identity safely into the proxy instance
+    const sessionProxy = new ProxyServer(clientManager, configStore, secretStore, logger, {
+        aiId: aiid,
+        disableEnvFallback: true
+    });
     sessionProxy.use(new DataMaskingMiddleware([/sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], '***[MASKED]***'));
     sessionProxy.use(new RateLimitMiddleware(50, 60000, configStore));
     await sessionProxy.server.connect(transport);
