@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.8] - 2026-03-26
+### Security & Proxy Intelligence
+- **Added**: Integrated **In-Memory Rate Limiting** from `@cyber-sec.space/aag-core@1.0.2`. All tool calls are now subject to a Token Bucket-based governor.
+- **Added**: Introduced `aagcli ai ratelimit <aiid> <rpm>` command to dynamically adjust request quotas per AI ID.
+- **Added**: Integrated **Data Masking Middleware**, automatically sanitizing PII and API keys from downstream MCP responses.
+- **Changed**: Enhanced `aagcli ai list` to display active Rate Limit status per AI client.
+- **Fixed**: Hardened the proxy's `X-Powered-By` header to mitigate Information Exposure (CWE-200).
+- **Security**: Upgraded the core engine to support **Auto-Reconnect** (Exponential Backoff) and **Fail-Fast Defense** for dropped downstream connections.
+
 ## [1.0.7] - 2026-03-26
 ### Architecture & Modularization
 - **Changed**: Refactored the codebase into an NPM Workspace monorepo. Extracted the core proxy logic into a permissive, OS-agnostic library (`@cyber-sec.space/aag-core`) utilizing dependency injection (`ISecretStore`, `IConfigStore`, `IAuditLogger`).
