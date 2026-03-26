@@ -88,7 +88,7 @@ A complete command-line interface (`src/commands/`) requiring `sudo` privileges 
 
 ### G. Built-in Middleware
 The core library provides out-of-the-box protection layers:
-- **RateLimitMiddleware**: Enforces requests per minute (RPM) limits via a "Token Bucket" algorithm, dynamically reading from the `rateLimit` configuration in `mcp-proxy-config.json`.
+- **RateLimitMiddleware**: Enforces Requests Per Minute (RPM) or Per Hour (RPH) limits via a "Token Bucket" algorithm. Optimized via zero-latency in-memory cache reads (`getConfig()`), reacting dynamically to `mcp-proxy-config.json` changes without disk I/O.
 - **DataMaskingMiddleware**: Uses RegEx-based interceptors to automatically filter out API Keys (e.g., `sk-...`), passwords, or PII from downstream tool results.
 
 ---
@@ -131,7 +131,7 @@ sequenceDiagram
 
     AI->>Core: CallTool(github_mcp___get_me)
     Core->>Core: Strip prefix -> github_mcp / get_me
-    Core->>Core: [Middleware] Execute RateLimitMiddleware check
+    Core->>Core: [Middleware] Execute RateLimitMiddleware (Memory Cache) check
     alt Rate Limit Exceeded
         Core-->>AI: Error: Rate limit exceeded
     else Check Passed

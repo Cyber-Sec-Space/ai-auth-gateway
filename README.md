@@ -160,8 +160,11 @@ sudo npx aagcli ai list
 # Allow 'my-new-agent' to use only a specific github tool
 sudo npx aagcli ai permit my-new-agent --tool github_mcp___get_me
 
-# Set rate limit for 'my-new-agent' to 100 RPM
-sudo npx aagcli ai ratelimit my-new-agent 100
+# Set rate limit for 'my-new-agent' to 100 RPM or 500 RPH
+sudo npx aagcli ai ratelimit my-new-agent 100 rpm
+
+# Instantly reset the rate limit to global defaults
+sudo npx aagcli ai ratelimit my-new-agent default
 ```
 
 ### 4. MCP Discovery

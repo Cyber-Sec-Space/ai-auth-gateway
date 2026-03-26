@@ -88,7 +88,7 @@ flowchart TD
 
 ### G. 內建中介軟體 (Built-in Middlewares)
 代理核心提供了開箱即用的防護層：
-- **RateLimitMiddleware (限流)**: 透過「權杖桶演算法 (Token Bucket)」實施每分鐘請求數 (RPM) 限制，根據 `mcp-proxy-config.json` 中的 `rateLimit` 動態調整。
+- **RateLimitMiddleware (限流)**: 透過「權杖桶演算法 (Token Bucket)」實施每分鐘 (RPM) 或每小時 (RPH) 的請求數限制。現已優化為零延遲的純記憶體快取讀取 (`getConfig()`)，根據 `mcp-proxy-config.json` 動態調整而不產生硬碟 I/O。
 - **DataMaskingMiddleware (資料遮罩)**: 基於正則表達式攔截器，自動過濾掉下游回傳結果中的 API Keys (如 `sk-...`)、密碼或 PII 敏感資訊。
 
 ---
@@ -131,7 +131,7 @@ sequenceDiagram
 
     AI->>Core: CallTool 請求 (github_mcp___get_me)
     Core->>Core: 移除前綴解析目標 -> 伺服器: github_mcp / 工具: get_me
-    Core->>Core: [Middleware] 執行 RateLimitMiddleware 檢查餘額
+    Core->>Core: [Middleware] 執行 RateLimitMiddleware (Memory Cache) 檢查餘額
     alt 限流觸發
         Core-->>AI: 錯誤：超出請求頻率限制 (Rate limit exceeded)
     else 檢查通過

@@ -161,8 +161,11 @@ sudo npx aagcli ai list
 # 開放 'my-new-agent' 只能使用 GitHub 的 get_me 工具
 sudo npx aagcli ai permit my-new-agent --tool github_mcp___get_me
 
-# 設定 'my-new-agent' 的限流為每分鐘 100 次
-sudo npx aagcli ai ratelimit my-new-agent 100
+# 設定 'my-new-agent' 的限流為每分鐘 100 次 (rpm) 或每小時 500 次 (rph)
+sudo npx aagcli ai ratelimit my-new-agent 100 rpm
+
+# 一鍵重置該 AI 的專屬限流回到全域預設值
+sudo npx aagcli ai ratelimit my-new-agent default
 ```
 
 ### 4. MCP 在線探索 (Discovery)
