@@ -59,7 +59,7 @@ The architecture is built as a **Monorepo** on top of the official `@modelcontex
 
 ### B. The Client Manager (`ClientManager` in `@cyber-sec.space/aag-core`)
 - **LRU Multiplexing**: Manages an LRU (Least-Recently Used) pool of downstream MCP clients to prevent memory leaks when managing vast amounts of downstream models.
-- **Scale-to-Zero JIT**: Employs a Just-In-Time lazy connection strategy. Downstream servers are only conceptually loaded into config and physically "awakened" when a tool is requested. Idle connections are automatically suspended.
+- **Scale-to-Zero JIT & Health Monitoring**: Employs a lazy connection strategy with configurable idle timeouts and heartbeat pings (`pingIntervalMs`, `pingTimeoutMs`). Downstream servers are only conceptually loaded into config and physically "awakened" when a tool is requested. Idle connections are automatically suspended to save resources.
 - **Transport Support**: Supports `stdio`, `sse`, and `http` downstream transports natively mapping between local binaries or remote SaaS arrays.
 - **Lifecycle**: Handles connection, disconnection, and error recovery (exponential backoff) for downstream services.
 

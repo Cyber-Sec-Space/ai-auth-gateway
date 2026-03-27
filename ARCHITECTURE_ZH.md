@@ -59,7 +59,7 @@ flowchart TD
 
 ### B. 客戶端管理器 (`@cyber-sec.space/aag-core` 套件中的 `ClientManager`)
 - **LRU 快取池 (Multiplexing)**: 採用 Least-Recently-Used 機制管理下游 MCP 客戶端陣列，避免無限擴張的記憶體洩漏風險。
-- **Scale-to-Zero JIT 架構**: 採用 Just-In-Time (就時喚醒) 的延遲連線策略，下游伺服器平時僅保持設定檔狀態，只會在工具被主動呼叫時才真正喚醒並建立連線，閒置時會自動休眠。
+- **Scale-to-Zero JIT 與健康狀態監控**: 採用延遲連線策略，提供可設定的閒置超時與心跳監控 (`pingIntervalMs`, `pingTimeoutMs`)。下游伺服器平時僅保持設定檔狀態，只會在工具被主動呼叫時才真正喚醒並建立連線，閒置時會自動休眠以節省運算資源。
 - **多重傳輸支援**: 原生支援 `stdio`、`sse` 以及 `http`，可輕易橋接本機二進位檔或遠端 SaaS 叢集。
 - **生命週期**: 處理下游服務的連線、斷線及錯誤復原 (指數退避重試演算法)。
 

@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.10] - 2026-03-27
 ### Architecture Update & Security Hardening
-- **Changed**: Completely adapted `ai_auth_gateway` to the newly released `@cyber-sec.space/aag-core@2.0.0` SaaS Architecture.
+- **Changed**: Completely adapted `ai_auth_gateway` to the newly released `@cyber-sec.space/aag-core` v2.1.0 SaaS Architecture.
 - **Security**: Hardened HTTP/SSE and STDIO connections by migrating from implicit global environment variables to strict runtime `ProxySessionOptions` mappings (`aiId`, `disableEnvFallback`). This ensures zero-contamination across scalable Multi-Tenant deployments.
-- **Fixed**: `aagcli mcp tools <serverId>` discovery issue. Upgraded the underlying mechanism to utilize the new v2.0.0 lazy `getClientJIT` (Just-In-Time) wakeup pattern instead of the legacy synchronous connector.
+- **Fixed**: `aagcli mcp tools <serverId>` discovery issue. Upgraded the underlying mechanism to utilize the new lazy `getClientJIT` (Just-In-Time) wakeup pattern instead of the legacy synchronous connector.
+- **Added**: Enhanced connection pooling with configurable heartbeat monitoring (`pingIntervalMs`, `pingTimeoutMs`) and idle suspension (`idleTimeoutMs`).
 - **Added**: Greatly enhanced NPM package discoverability by injecting relevant `mcp`, `llm`, and `proxy` SEO keywords directly into `package.json`.
 
 ## [1.0.8] - 2026-03-26

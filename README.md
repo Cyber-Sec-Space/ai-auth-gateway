@@ -15,7 +15,7 @@ The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built wit
 - 🛡️ **Secure Secret Management**: Integrates with the OS Keychain (`keytar`) and AES-256-GCM to securely store and inject API Keys.
 - ⏳ **Smart Rate Limiting**: Built-in Token Bucket algorithm to set dynamic RPM (Requests Per Minute) limits per AI client, protecting your downstream API quotas.
 - 🎭 **Automatic Data Masking**: Automatically detects and masks API keys or sensitive information in downstream results, preventing leaks to the AI model.
-- 🔀 **Protocol Multiplexing**: Connects seamlessly over `stdio`, `sse`, or `http` to downstream servers.
+- 🔀 **Protocol Multiplexing**: Connects seamlessly over `stdio`, `sse`, or `http` to downstream servers with built-in connection pooling, idle timeouts, and automatic heartbeat monitoring.
 - 🔒 **Granular RBAC**: Control specifically which connected AI client can access which tools across which servers.
 - 📦 **Modular Core**: Built on top of the `@cyber-sec.space/aag-core` library. Fully dependency-injected for easy enterprise adoption (e.g. replacing Keytar with Hashicorp Vault).
 - 🕵️ **Auditing & Logging**: Masked and secured logs track AIID, connection times, and tool execution status (`logs/proxy.log`).

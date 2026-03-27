@@ -41,7 +41,14 @@ export class FileConfigStore extends EventEmitter implements IConfigStore {
       }
       
       if (!this.config.system) {
-        this.config.system = { port: 3000, logLevel: "INFO" };
+        this.config.system = { 
+          port: 3000, 
+          logLevel: "INFO",
+          pingIntervalMs: 60000,
+          pingTimeoutMs: 10000,
+          idleTimeoutMs: 300000,
+          reconnectTimeoutMs: 5000 
+        };
         needsSave = true;
       }
 
