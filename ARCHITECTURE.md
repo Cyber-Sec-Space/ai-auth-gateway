@@ -71,7 +71,8 @@ The architecture is built as a **Monorepo** on top of the official `@modelcontex
 - Integrated directly into the proxy, the RBAC engine filters which tools an AI is allowed to see and call based on granular whitelists and blacklists defined per `AIKey`.
 - Tools from multiple downstream servers are aggregated and namespaced (e.g., `${serverId}___${toolName}`) to prevent collisions.
 
-### E. Secure Logging System (`src/utils/logger.ts`)
+### E. Security & Logging System (`src/utils/logger.ts`, `src/index.ts`)
+- **API Hardening**: Protects all endpoints pre-authentication using `helmet` (HSTS, NoSniff) and Global IP Rate Limiting to prevent brute-force connection exhaustion (`express-rate-limit`).
 - **Centralized Tracing**: Records all proxy activities, including successful authentications, specific tool calls, and permission denials.
 - **Data Masking**: Automatically identifies and masks sensitive data (such as API Keys, AI Keys, or Authorization Headers) before logging to `logs/proxy.log` or the console, ensuring secrets never leak.
 

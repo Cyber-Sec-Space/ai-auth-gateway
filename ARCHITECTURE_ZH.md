@@ -71,7 +71,8 @@ flowchart TD
 - 直接整合於代理層，RBAC 引擎可根據每個 `AIKey` 所定義的精細白名單與黑名單，過濾 AI 能看到及呼叫的工具。
 - 來自多個下游伺服器的工具會被彙總並加上命名空間（例如 `${serverId}___${toolName}`）以防止名稱衝突。
 
-### E. 安全日誌系統 (`src/utils/logger.ts`)
+### E. 安全防護與日誌系統 (`src/utils/logger.ts`, `src/index.ts`)
+- **API 強化防護**: 在進入核心身分驗證前，全面採用 `helmet` (HSTS, NoSniff) 保護基礎端點，並實施全域 IP 防刷連線限制 (`express-rate-limit`)，在防線最前緣防範惡意連線耗盡 (DDoS) 攻擊。
 - **集中追蹤**: 記錄所有代理活動，包含驗證成功、特定的工具呼叫以及權限拒絕等行為。
 - **資料遮罩**: 系統會自動辨識並遮罩敏感資料（如 API 金鑰、AI 金鑰或 Authorization 標頭），確保機密不會外洩到 `logs/proxy.log` 或是終端機console。
 
