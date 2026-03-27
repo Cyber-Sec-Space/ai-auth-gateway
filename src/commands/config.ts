@@ -55,8 +55,15 @@ export function registerSystemConfigCommand(program: Command) {
           process.exit(1);
         }
         config.system.logLevel = value.toUpperCase() as any;
+      } else if (["pingIntervalMs", "pingTimeoutMs", "idleTimeoutMs", "reconnectTimeoutMs"].includes(key)) {
+        const ms = parseInt(value, 10);
+        if (isNaN(ms) || ms <= 0) {
+          console.error(`\x1b[31m[Error] Invalid duration for ${key}: ${value}. Must be a positive integer (ms).\x1b[0m`);
+          process.exit(1);
+        }
+        (config.system as any)[key] = ms;
       } else {
-        console.error(`\x1b[31m[Error] Unknown system setting: ${key}. Valid keys are: port, logLevel\x1b[0m`);
+        console.error(`\x1b[31m[Error] Unknown system setting: ${key}. Valid keys are: port, logLevel, pingIntervalMs, pingTimeoutMs, idleTimeoutMs, reconnectTimeoutMs\x1b[0m`);
         process.exit(1);
       }
 
