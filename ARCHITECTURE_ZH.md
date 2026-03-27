@@ -45,10 +45,6 @@ flowchart TD
     rbac -.-> vault
 ```
 
-### 精美架構視覺化圖表 (v1.0.8)
-![AAG v1.0.8 架構設計圖](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
-
-
 ---
 
 ## 2. 核心組件
@@ -62,9 +58,10 @@ flowchart TD
 - **中介軟體管線 (Middleware Pipeline)**: 實施了 `use()` 模式，允許在請求發送前 (`onRequest`) 或結果回傳前 (`onResponse`) 進行攔截處理。
 
 ### B. 客戶端管理器 (`@cyber-sec.space/aag-core` 套件中的 `ClientManager`)
-- **多路復用 (Multiplexing)**: 管理一個下游 MCP 客戶端池，每個客戶端皆連接著不同的目標伺服器。
-- **傳輸支援**: 支援使用 `stdio`、`sse` 以及 `http` 與下游進行通訊。
-- **生命週期**: 處理下游服務的連線、斷線及錯誤復原。
+- **LRU 快取池 (Multiplexing)**: 採用 Least-Recently-Used 機制管理下游 MCP 客戶端陣列，避免無限擴張的記憶體洩漏風險。
+- **Scale-to-Zero JIT 架構**: 採用 Just-In-Time (就時喚醒) 的延遲連線策略，下游伺服器平時僅保持設定檔狀態，只會在工具被主動呼叫時才真正喚醒並建立連線，閒置時會自動休眠。
+- **多重傳輸支援**: 原生支援 `stdio`、`sse` 以及 `http`，可輕易橋接本機二進位檔或遠端 SaaS 叢集。
+- **生命週期**: 處理下游服務的連線、斷線及錯誤復原 (指數退避重試演算法)。
 
 ### C. 設定管理器與儲存介面
 - **核心介面 (`IConfigStore`, `ISecretStore`)**: 核心 Proxy 完全不去預設立場資料該如何儲存，這使得企業端能輕易地將本機檔案庫抽換為關聯式資料庫或是 Hashicorp Vault。
@@ -100,21 +97,19 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant AI as AI 客戶端
-    participant Core as AAG-Core (代理核心)
-    participant CFG as AAG-CLI (IConfigStore 介面)
+    participant GW as AAG Gateway (HTTP/CLI)
+    participant Core as AAG-Core (ProxySession)
     participant MCP as 下游伺服器群
 
-    AI->>Core: 連接至 /sse (探索工具清單)
-    Core->>Core: 攔截並擷取 AI_ID & AI_KEY
-    Core->>CFG: 透過注入介面驗證連線憑證
+    AI->>GW: 連接至 /sse (Headers: x-ai-id, x-ai-key)
+    GW->>GW: 透過 Store 驗證連線憑證
     alt 憑證無效
-        CFG-->>Core: 未授權
-        Core-->>AI: 401 Unauthorized / 中斷連線
+        GW-->>AI: 401 Unauthorized / 中斷連線
     else 憑證正確有效
-        CFG-->>Core: 通過驗證 (回傳該 AI 權限)
-        Core->>MCP: 取得所有在線伺服器的可用工具
+        GW->>Core: 綁定代理會話 ProxySession({ aiId: 'tenant', disableEnvFallback: true })
+        Core->>MCP: 就時喚醒下游 (JIT) 並取得可用工具
         MCP-->>Core: 回傳未過濾的工具總表
-        Core->>Core: 依據 RBAC (allowedTools) 刪除無權限的工具
+        Core->>Core: 依據 RBAC 刪除無權限的工具
         Core->>Core: 將工具名稱加上前綴 (例如 server___tool)
         Core-->>AI: 傳回篩選後、安全隔離的工具清單
     end
@@ -125,11 +120,12 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant AI as AI 客戶端
-    participant Core as AAG-Core (代理核心)
+    participant Core as AAG-Core (ProxySession)
     participant KV as AAG-CLI (ISecretStore 介面)
     participant MCP as 目標下游伺服器
 
     AI->>Core: CallTool 請求 (github_mcp___get_me)
+    Core->>Core: 驗證多租戶身分綁定 (aiId Natively Bound)
     Core->>Core: 移除前綴解析目標 -> 伺服器: github_mcp / 工具: get_me
     Core->>Core: [Middleware] 執行 RateLimitMiddleware (Memory Cache) 檢查餘額
     alt 限流觸發
@@ -138,13 +134,14 @@ sequenceDiagram
         Core->>Core: 嚴格檢查該 AI 是否具備工具執行權限
         alt 遭到拒絕
             Core-->>AI: 錯誤：拒絕存取，權限不足
-        else 允許存取
-            Core->>KV: 請求讀取 github_mcp 指定的注入金鑰
-            KV-->>Core: ISecretStore 解密並回傳原始的連線令牌
-            Core->>MCP: 秘密地將金鑰注入 HTTP 標頭或環境變數並轉發請求
-            MCP-->>Core: 回傳外部 API 的真實執行結果
-            Core->>Core: [Middleware] 執行 DataMaskingMiddleware 遮罩敏感內容
-            Core-->>AI: 將結果安全轉發回上游 AI
+        else 驗證通過具備權限
+            Core->>MCP: 就時喚醒下游伺服器連線 (JIT)
+            Core->>KV: 要求解析隱藏注入的 API 金鑰
+            KV-->>Core: 回傳原生金鑰字串 (如從 macOS Keychain)
+            Core->>MCP: 夾帶金鑰與參數轉發請求至下游 Tool
+            MCP-->>Core: 回傳工具執行結果
+            Core->>Core: [Middleware] 執行 DataMaskingMiddleware 脫敏輸出
+            Core-->>AI: 傳回安全遮罩後的最終結果
         end
     end
 ```

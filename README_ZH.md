@@ -20,9 +20,6 @@
 - 📦 **模組化核心**: 底層採用 `@cyber-sec.space/aag-core` 核心庫建構。透過依賴注入 (Dependency Injection) 設計，允許企業輕鬆將底層替換為 Hashicorp Vault 或 DB 等商業基礎設施。
 - 🕵️ **安全稽核日誌**: 自動遮罩敏感資訊的日誌系統，完整追蹤 AI_ID 連線時間與工具執行狀態 (`logs/proxy.log`)。
 
-### 核心架構圖 (Architecture)
-![AAG v1.0.8 架構設計圖](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
-
 
 ---
 
@@ -33,31 +30,16 @@
 - `npm` 或 `yarn`
 
 ### 2. 透過 NPM 全域安裝 (官方建議)
-若您只想快速使用此平台，可直接透過官方的 NPM registry 全域安裝：
+若您想快速安裝並在任何地方使用此系統的指令 `aagcli`，請透過 NPM 執行全域安裝：
 ```bash
 npm install -g @cyber-sec.space/ai-auth-gateway
 ```
 *NPM 套件位址: [@cyber-sec.space/ai-auth-gateway](https://www.npmjs.com/package/@cyber-sec.space/ai-auth-gateway)*
 
-### 3. 下載與編譯 (原始碼部署)
-若是從原始碼部署（如部署至 VPS 或本機開發測試）：
-```bash
-git clone https://github.com/Cyber-Sec-Space/ai-auth-gateway.git
-cd ai_auth_gateway
-npm install
-npm run build
-```
-
-### 4. 系統更新 (System Update)
-若您是透過 NPM 全域安裝，可透過以下指令將系統升級至最新版本：
+### 3. 系統更新 (System Update)
+若要將系統升級至最新版本：
 ```bash
 npm update -g @cyber-sec.space/ai-auth-gateway
-```
-若您是從原始碼部署，請拉取最新程式碼後重新編譯：
-```bash
-git pull
-npm install
-npm run build
 ```
 
 ---
@@ -78,7 +60,7 @@ npm start
 
 **方式一：透過 STDIO 橋接 (適用於 Claude Desktop 或 Cursor 本機代理)**
 如果您希望 AI 客戶端直接在內部喚醒 Gateway，而不需要在背景執行 Daemon，請在客戶端設定中指向編譯好的 `stdio.js`：
-*(💡 提示：您可以隨時在終端機輸入 `sudo npx aagcli stdio-path` 來取得該檔案的真實絕對路徑)*
+*(💡 提示：您可以隨時在終端機輸入 `sudo aagcli stdio-path` 來取得該檔案的真實絕對路徑)*
 ```json
 {
   "mcpServers": {
@@ -119,31 +101,31 @@ npm start
 （註：如透過 `stdio` 方式連線，則完全不需要啟動此背景程序）
 ```bash
 # 在背景啟動 SSE Proxy 伺服器
-sudo npx aagcli sse start
+sudo aagcli sse start
 
 # 檢查背景伺服器運作狀態
-sudo npx aagcli sse status
+sudo aagcli sse status
 
 # 安全地關閉背景伺服器
-sudo npx aagcli sse stop
+sudo aagcli sse stop
 ```
 
 ### 2. 系統設定 (System Config)
 不需要手動編輯 JSON，即可動態管理 Proxy Port 或 Log 級別。
 ```bash
 # 檢視目前的系統環境設定
-sudo npx aagcli config view
+sudo aagcli config view
 
 # 更改 Proxy 的連線埠 (將於下次伺服器啟動時生效)
-sudo npx aagcli config set port 8080
-sudo npx aagcli config set logLevel DEBUG
+sudo aagcli config set port 8080
+sudo aagcli config set logLevel DEBUG
 ```
 
 ### 2. 金鑰金庫 (Keychain) 管理
 將下游的 API 金鑰安全地存入作業系統原生的保護加密區 (如 macOS 鑰匙圈、Linux libsecret)。
 ```bash
 # 將 GitHub 的 Personal Access Token 存入系統金鑰圈
-sudo npx aagcli keychain set github pat my_secret_token_123
+sudo aagcli keychain set github pat my_secret_token_123
 
 # 完成後即可在 mcp-proxy-config.json 內如此引用：
 # "value": "keytar://github/pat"
@@ -153,36 +135,36 @@ sudo npx aagcli keychain set github pat my_secret_token_123
 註冊新 AI 身份，並針對個別的 AI 身份設定其下游工具白名單。
 ```bash
 # 註冊一把新的 AI 金鑰
-sudo npx aagcli ai register my-new-agent "用來測試的 Agent"
+sudo aagcli ai register my-new-agent "用來測試的 Agent"
 
 # 檢視目前所有已註冊的 AI 及狀態
-sudo npx aagcli ai list
+sudo aagcli ai list
 
 # 開放 'my-new-agent' 只能使用 GitHub 的 get_me 工具
-sudo npx aagcli ai permit my-new-agent --tool github_mcp___get_me
+sudo aagcli ai permit my-new-agent --tool github_mcp___get_me
 
 # 設定 'my-new-agent' 的限流為每分鐘 100 次 (rpm) 或每小時 500 次 (rph)
-sudo npx aagcli ai ratelimit my-new-agent 100 rpm
+sudo aagcli ai ratelimit my-new-agent 100 rpm
 
 # 一鍵重置該 AI 的專屬限流回到全域預設值
-sudo npx aagcli ai ratelimit my-new-agent default
+sudo aagcli ai ratelimit my-new-agent default
 ```
 
 ### 4. MCP 在線探索 (Discovery)
 即時監控 Proxy 與下游伺服器的連接狀態，並探索對方到底提供了什麼工具。
 ```bash
 # 列出目前掛載在 Gateway 上的所有下游 MCP 伺服器
-sudo npx aagcli mcp list
+sudo aagcli mcp list
 
 # 呼叫並陳列 `github_mcp` 上所有可供執行的工具與中文/英文功能描述
-sudo npx aagcli mcp tools github_mcp
+sudo aagcli mcp tools github_mcp
 ```
 
 ### 5. 輔助工具指令 (Utility)
 當您需要讓本機上的 AI 客戶端 (如 Cursor, Claude Desktop) 透過 `stdio` 方式直接喚醒 Proxy 時，可以用此指令快速取得編譯好的代理啟動路徑，方便複製貼上到各種設定檔中。
 ```bash
 # 取得本機 stdio 代理執行檔的絕對路徑
-sudo npx aagcli stdio-path
+sudo aagcli stdio-path
 ```
 
 ---

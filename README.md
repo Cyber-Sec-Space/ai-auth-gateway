@@ -20,9 +20,6 @@ The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built wit
 - 📦 **Modular Core**: Built on top of the `@cyber-sec.space/aag-core` library. Fully dependency-injected for easy enterprise adoption (e.g. replacing Keytar with Hashicorp Vault).
 - 🕵️ **Auditing & Logging**: Masked and secured logs track AIID, connection times, and tool execution status (`logs/proxy.log`).
 
-### Architecture Visualization
-![AAG v1.0.8 Architecture Diagram](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
-
 
 ---
 
@@ -32,32 +29,17 @@ The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built wit
 - [Node.js](https://nodejs.org/) (v16+ recommended)
 - `npm` or `yarn`
 
-### 2. Install via NPM (Recommended)
-You can directly install the gateway globally from the official NPM registry:
+### 2. Install via NPM
+To install the AI Auth Gateway globally so the `aagcli` command is available anywhere on your system:
 ```bash
 npm install -g @cyber-sec.space/ai-auth-gateway
 ```
 *NPM Page: [@cyber-sec.space/ai-auth-gateway](https://www.npmjs.com/package/@cyber-sec.space/ai-auth-gateway)*
 
-### 3. Clone & Build from Source
-If you are deploying from source or contributing:
-```bash
-git clone https://github.com/Cyber-Sec-Space/ai-auth-gateway.git
-cd ai_auth_gateway
-npm install
-npm run build
-```
-
-### 4. Updating the Gateway
-If you installed the gateway globally via NPM, you can update it to the latest version by running:
+### 3. Updating the Gateway
+To update your global installation to the latest version:
 ```bash
 npm update -g @cyber-sec.space/ai-auth-gateway
-```
-If you cloned from GitHub, pull the latest changes and re-build:
-```bash
-git pull
-npm install
-npm run build
 ```
 
 ---
@@ -78,7 +60,7 @@ To connect your AI client (e.g., Claude Desktop, Cursor), configure it to talk t
 
 **Method 1: Direct STDIO Bridge (For Claude Desktop / Local Clients)**
 If you want the AI client to directly boot the Gateway process internally without relying on the background daemon, simply point it to the compiled `stdio.js`:
-*(💡 Tip: You can run `sudo npx aagcli stdio-path` anytime to get the exact absolute path to this file)*
+*(💡 Tip: You can run `sudo aagcli stdio-path` anytime to get the exact absolute path to this file)*
 ```json
 {
   "mcpServers": {
@@ -118,31 +100,31 @@ To manage your Gateway configurations, permissions, and secrets, use the built-i
 You can seamlessly run the SSE Proxy Gateway in the background without keeping a terminal open. This is only necessary if you aren't using the local `stdio` node launcher.
 ```bash
 # Start the SSE server in the background
-sudo npx aagcli sse start
+sudo aagcli sse start
 
 # Check if the server is running
-sudo npx aagcli sse status
+sudo aagcli sse status
 
 # Stop the background SSE server safely
-sudo npx aagcli sse stop
+sudo aagcli sse stop
 ```
 
 ### 2. System Configuration
 Manage proxy port or log levels dynamically without touching the JSON file.
 ```bash
 # View current settings
-sudo npx aagcli config view
+sudo aagcli config view
 
 # Change the proxy port (requires restart to apply)
-sudo npx aagcli config set port 8080
-sudo npx aagcli config set logLevel DEBUG
+sudo aagcli config set port 8080
+sudo aagcli config set logLevel DEBUG
 ```
 
 ### 2. Keychain (Secret Vault) Management
 Store API keys in your host operating system's native secure enclave (e.g., macOS Keychain, Linux libsecret).
 ```bash
 # Store a new Personal Access Token (PAT) for GitHub
-sudo npx aagcli keychain set github pat my_secret_token_123
+sudo aagcli keychain set github pat my_secret_token_123
 
 # The value can then be referenced in mcp-proxy-config.json as:
 # "value": "keytar://github/pat"
@@ -152,36 +134,36 @@ sudo npx aagcli keychain set github pat my_secret_token_123
 Register new AI clients and manage their granular permissions over downstream servers and tools.
 ```bash
 # Register a new AI key
-sudo npx aagcli ai register my-new-agent "Agent for testing"
+sudo aagcli ai register my-new-agent "Agent for testing"
 
 # Review connected AI keys
-sudo npx aagcli ai list
+sudo aagcli ai list
 
 # Allow 'my-new-agent' to use only a specific github tool
-sudo npx aagcli ai permit my-new-agent --tool github_mcp___get_me
+sudo aagcli ai permit my-new-agent --tool github_mcp___get_me
 
 # Set rate limit for 'my-new-agent' to 100 RPM or 500 RPH
-sudo npx aagcli ai ratelimit my-new-agent 100 rpm
+sudo aagcli ai ratelimit my-new-agent 100 rpm
 
 # Instantly reset the rate limit to global defaults
-sudo npx aagcli ai ratelimit my-new-agent default
+sudo aagcli ai ratelimit my-new-agent default
 ```
 
 ### 4. MCP Discovery
 Discover live tools currently available on your downstream servers.
 ```bash
 # List all active downstream MCP servers connected to the proxy
-sudo npx aagcli mcp list
+sudo aagcli mcp list
 
 # View all live tools (and their descriptions) available on 'github_mcp'
-sudo npx aagcli mcp tools github_mcp
+sudo aagcli mcp tools github_mcp
 ```
 
 ### 5. Utility Commands
 When integrating a local AI client (like Cursor or Claude Desktop) via the `stdio` connection method, you can use this helper command to instantly retrieve the absolute path of the built `stdio.js` launcher.
 ```bash
 # Get the absolute path to the local stdio proxy script
-sudo npx aagcli stdio-path
+sudo aagcli stdio-path
 ```
 
 ---

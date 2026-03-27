@@ -48,7 +48,7 @@ export function registerMcpCommand(program: Command) {
       const discoveryConfig = { ...config, mcpServers: { [serverId]: serverConfig } };
       await clientManager.syncConfig(discoveryConfig);
 
-      const client = clientManager.getClient(serverId);
+      const client = await clientManager.getClientJIT(serverId);
       if (!client) {
         console.error(`Failed to connect to '${serverId}'.`);
         return;

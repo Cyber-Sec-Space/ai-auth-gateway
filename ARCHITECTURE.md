@@ -45,10 +45,6 @@ flowchart TD
     rbac -.-> vault
 ```
 
-### Premium Architecture Visualization (v1.0.8)
-![AAG v1.0.8 Architecture Diagram](file:///Users/ashodesu/.gemini/antigravity/brain/60b146ed-eb0e-473b-ae46-a3b1eb2d2a30/aag_v108_architecture_diagram_1774508998926.png)
-
-
 ---
 
 ## 2. Core Components
@@ -62,9 +58,10 @@ The architecture is built as a **Monorepo** on top of the official `@modelcontex
 - **Middleware Pipeline**: Implements a `use()` pattern allowing interception and mutation during the `onRequest` and `onResponse` phases.
 
 ### B. The Client Manager (`ClientManager` in `@cyber-sec.space/aag-core`)
-- **Multiplexing**: Manages a pool of downstream MCP clients, each connected to a different target server.
-- **Transport Support**: Supports `stdio`, `sse`, and `http` downstream transports.
-- **Lifecycle**: Handles connection, disconnection, and error recovery for downstream services.
+- **LRU Multiplexing**: Manages an LRU (Least-Recently Used) pool of downstream MCP clients to prevent memory leaks when managing vast amounts of downstream models.
+- **Scale-to-Zero JIT**: Employs a Just-In-Time lazy connection strategy. Downstream servers are only conceptually loaded into config and physically "awakened" when a tool is requested. Idle connections are automatically suspended.
+- **Transport Support**: Supports `stdio`, `sse`, and `http` downstream transports natively mapping between local binaries or remote SaaS arrays.
+- **Lifecycle**: Handles connection, disconnection, and error recovery (exponential backoff) for downstream services.
 
 ### C. The Configuration Manager & Storage Interfaces
 - **Core Interfaces (`IConfigStore`, `ISecretStore`)**: The core proxy is completely agnostic to how secrets and configs are stored, making it easy to swap implementations for enterprise databases or Hashicorp Vault.
@@ -100,19 +97,17 @@ The core library provides out-of-the-box protection layers:
 ```mermaid
 sequenceDiagram
     participant AI as AI Client
-    participant Core as AAG-Core (Proxy)
-    participant CFG as AAG-CLI (IConfigStore)
+    participant GW as AAG Gateway (HTTP/CLI)
+    participant Core as AAG-Core (ProxySession)
     participant MCP as Downstream Servers
 
-    AI->>Core: Connect to /sse
-    Core->>Core: Extract AI_ID & AI_KEY from Headers/Env
-    Core->>CFG: Validate Credentials via injected store
+    AI->>GW: Connect to /sse (Headers: x-ai-id, x-ai-key)
+    GW->>GW: Validate Credentials via ConfigStore
     alt Invalid Credentials
-        CFG-->>Core: Unauthorized
-        Core-->>AI: 401 Unauthorized / Reject SSE
+        GW-->>AI: 401 Unauthorized / Reject Connection
     else Valid Credentials
-        CFG-->>Core: Accepted (Returns AI permissions)
-        Core->>MCP: Fetch all available tools
+        GW->>Core: Bind ProxySession({ aiId: 'tenant', disableEnvFallback: true })
+        Core->>MCP: Wake up downstream (JIT) & Fetch Tools
         MCP-->>Core: Combined Tool List
         Core->>Core: Filter tools via RBAC allowedTools & deniedTools
         Core->>Core: Prefix tool names (serverId___toolName)
@@ -125,11 +120,12 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant AI as AI Client
-    participant Core as AAG-Core (Proxy)
+    participant Core as AAG-Core (ProxySession)
     participant KV as AAG-CLI (ISecretStore)
     participant MCP as Target Downstream Server
 
     AI->>Core: CallTool(github_mcp___get_me)
+    Core->>Core: Check Session Mapping (aiId natively bound)
     Core->>Core: Strip prefix -> github_mcp / get_me
     Core->>Core: [Middleware] Execute RateLimitMiddleware (Memory Cache) check
     alt Rate Limit Exceeded
@@ -138,13 +134,14 @@ sequenceDiagram
         Core->>Core: Check RBAC strictly for this ID
         alt Permissions Denied
             Core-->>AI: Error: Tool access forbidden
-        else Has Access
-            Core->>KV: Request injected auth for github_mcp via interface
-            KV-->>Core: ISecretStore Returns raw API Key (e.g., bearer token)
-            Core->>MCP: Forward Request + Inject API Key secretly
-            MCP-->>Core: Return Tool Execution Result
-            Core->>Core: [Middleware] Execute DataMaskingMiddleware to sanitize output
-            Core-->>AI: Return Result
+        else Permissions Granted
+            Core->>MCP: Wake up downstream client (JIT)
+            Core->>KV: Attempt to resolve injected secret token
+            KV-->>Core: Raw Credentials (e.g. from macOS Keychain)
+            Core->>MCP: Forward payload & args to downstream Tool
+            MCP-->>Core: Tool Result
+            Core->>Core: [Middleware] Execute DataMaskingMiddleware on Result
+            Core-->>AI: Masked & Filtered Result
         end
     end
 ```
