@@ -1,6 +1,8 @@
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { ClientManager, ProxyServer, SessionManager, PluginLoader, RateLimitPlugin, DataMaskingPlugin } from "@cyber-sec.space/aag-core";
 import { FileConfigStore } from "./services/FileConfigStore.js";
 import { KeychainSecretStore } from "./services/KeychainSecretStore.js";
@@ -22,13 +24,41 @@ async function main() {
   const initialConfig = configStore.load();
   await clientManager.syncConfig(initialConfig);
 
+  let hasDataMasking = false;
+  let hasRateLimit = false;
+
+  const updatePluginFlags = () => {
+    const plugins = configStore.getConfig()?.plugins || [];
+    hasDataMasking = plugins.some(p => p.name === "@cyber-sec.space/aag-core-data-masking");
+    hasRateLimit = plugins.some(p => p.name === "@cyber-sec.space/aag-core-rate-limit");
+  };
+
+  updatePluginFlags();
+
   configStore.watch();
   configStore.on("configChanged", async (newConfig) => {
+    updatePluginFlags();
     await clientManager.syncConfig(newConfig);
   });
 
   const app = express();
   app.disable("x-powered-by");
+
+  // 1. Core API Security Headers
+  app.use(helmet({
+    contentSecurityPolicy: false, // In case we eventually serve a GUI
+  }));
+
+  // 2. Global IP Rate Limiter to prevent brute force / connection exhaustion
+  const globalLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 1000, 
+    message: "Too many connections from this IP, please try again after a minute",
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use(globalLimiter);
+
   app.use(cors());
 
   const transports = new Map<string, SSEServerTransport>();
@@ -77,7 +107,7 @@ async function main() {
     await pluginLoader.loadPlugins(sessionProxy, configStore, plugins);
 
     // Manually register built-in plugins as fallback if not defined in config
-    if (!plugins.find(p => p.name === "@cyber-sec.space/aag-core-data-masking")) {
+    if (!hasDataMasking) {
       await DataMaskingPlugin.register({
         proxyServer: sessionProxy,
         configStore,
@@ -86,7 +116,7 @@ async function main() {
       });
     }
     
-    if (!plugins.find(p => p.name === "@cyber-sec.space/aag-core-rate-limit")) {
+    if (!hasRateLimit) {
       await RateLimitPlugin.register({
         proxyServer: sessionProxy,
         configStore,

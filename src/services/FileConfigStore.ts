@@ -63,15 +63,20 @@ export class FileConfigStore extends EventEmitter implements IConfigStore {
     }
   }
 
+  private watchTimeout: NodeJS.Timeout | null = null;
+
   public watch() {
     chokidar.watch(this.configPath).on("change", () => {
-      console.log(`\n[FileConfigStore] ${this.configPath} changed, reloading configuration...`);
-      try {
-        const newConfig = this.load();
-        this.emit("configChanged", newConfig);
-      } catch (error) {
-        console.error("[FileConfigStore] Failed to reload config:", error);
-      }
+      if (this.watchTimeout) clearTimeout(this.watchTimeout);
+      this.watchTimeout = setTimeout(() => {
+        console.log(`\n[FileConfigStore] ${this.configPath} changed, reloading configuration...`);
+        try {
+          const newConfig = this.load();
+          this.emit("configChanged", newConfig);
+        } catch (error) {
+          console.error("[FileConfigStore] Failed to reload config:", error);
+        }
+      }, 300);
     });
   }
 

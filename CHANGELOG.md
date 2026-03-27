@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Added**: Enhanced connection pooling with configurable Scale-to-Zero heartbeat monitoring (`pingIntervalMs`, `pingTimeoutMs`, `reconnectTimeoutMs`) and idle suspension (`idleTimeoutMs`).
 - **Added**: Upgraded `aagcli config set` command to natively support configuring the new 2.1.0 system heartbeat parameters without manual JSON edits.
 - **Changed**: Renamed the background proxy management command namespace from `aagcli sse` to `aagcli server` to accurately reflect its broader proxy capabilities (SSE & HTTP multiplexing).
+- **Security**: Mitigated a High-Severity ReDoS (CVE-2026-4923) in the underlying Express routing engine by overriding the bundled `path-to-regexp` dependency to `v8.4.0`.
+- **Security**: Hardened the proxy endpoints by implementing `helmet` (API Security Defaults) and a Global IP Rate Limiter (`express-rate-limit`) to prevent DDoS and connection exhaustion before AI sessions are even validated.
+- **Performance**: Introduced a robust 300ms Debounce mechanism to `FileConfigStore`. This resolves a severe I/O thrashing bug where editor text-saves (`chokidar`) would rapidly trigger overlapping configuration reloads and race conditions.
+- **Performance**: Optimized the downstream Plugin Loader to natively cache the required built-in plugin dependencies upon configuration changes, completely removing the redundant `O(N)` fallback calculation bottleneck per-SSE connection.
 - **Fixed**: Corrected broken SSE connection URL parameter authentication parsing (`?aiid=...&key=...`), restoring seamless integration for GUI-based MCP clients like Cursor.
 - **Fixed**: Hardened `SessionManager` connection dropping logic to ensure all disconnected clients properly invoke their shutdown callback hooks (Memory Leak prevention).
 
