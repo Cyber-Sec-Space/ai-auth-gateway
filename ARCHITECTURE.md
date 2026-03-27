@@ -22,7 +22,7 @@ flowchart TD
 
     subgraph gateway ["AAG-Core (Library)"]
         subgraph proxy_p ["Proxy Pipeline"]
-            mw["Middlewares (Rate Limit, Masking)"]
+            mw["Plugins (Rate Limit, Masking)"]
             rbac["RBAC & Routing Engine"]
             mw --> rbac
         end
@@ -55,11 +55,11 @@ The architecture is built as a **Monorepo** on top of the official `@modelcontex
 - **Transport**: Listens for incoming connections from AI Clients via Server-Sent Events (SSE) or STDIO.
 - **Authentication**: Validates incoming `AI_ID` and `AI_KEY` against authorized entities via the injected `IConfigStore`.
 - **Protocol Emulation**: Intercepts standard MCP requests (`ListToolsRequestSchema`, `CallToolRequestSchema`) and multiplexes them across multiple downstream servers.
-- **Middleware Pipeline**: Implements a `use()` pattern allowing interception and mutation during the `onRequest` and `onResponse` phases.
+- **Plugin Ecosystem**: Implements a dynamic `PluginLoader` allowing modular plugins (`RateLimitPlugin`, `DataMaskingPlugin`) to intercept and mutate traffic during the `onRequest` and `onResponse` phases.
 
 ### B. The Client Manager (`ClientManager` in `@cyber-sec.space/aag-core`)
 - **LRU Multiplexing**: Manages an LRU (Least-Recently Used) pool of downstream MCP clients to prevent memory leaks when managing vast amounts of downstream models.
-- **Scale-to-Zero JIT**: Employs a Just-In-Time lazy connection strategy. Downstream servers are only conceptually loaded into config and physically "awakened" when a tool is requested. Idle connections are automatically suspended.
+- **Scale-to-Zero JIT & Health Monitoring**: Employs a lazy connection strategy with configurable idle timeouts and heartbeat pings (`pingIntervalMs`, `pingTimeoutMs`). Downstream servers are only conceptually loaded into config and physically "awakened" when a tool is requested. Idle connections are automatically suspended to save resources.
 - **Transport Support**: Supports `stdio`, `sse`, and `http` downstream transports natively mapping between local binaries or remote SaaS arrays.
 - **Lifecycle**: Handles connection, disconnection, and error recovery (exponential backoff) for downstream services.
 
@@ -71,22 +71,24 @@ The architecture is built as a **Monorepo** on top of the official `@modelcontex
 - Integrated directly into the proxy, the RBAC engine filters which tools an AI is allowed to see and call based on granular whitelists and blacklists defined per `AIKey`.
 - Tools from multiple downstream servers are aggregated and namespaced (e.g., `${serverId}___${toolName}`) to prevent collisions.
 
-### E. Secure Logging System (`src/utils/logger.ts`)
+### E. Security & Logging System (`src/utils/logger.ts`, `src/index.ts`)
+- **API Hardening**: Protects all endpoints pre-authentication using `helmet` (HSTS, NoSniff) and Global IP Rate Limiting to prevent brute-force connection exhaustion (`express-rate-limit`).
 - **Centralized Tracing**: Records all proxy activities, including successful authentications, specific tool calls, and permission denials.
 - **Data Masking**: Automatically identifies and masks sensitive data (such as API Keys, AI Keys, or Authorization Headers) before logging to `logs/proxy.log` or the console, ensuring secrets never leak.
 
 ### F. The CLI (`aagcli`)
 A complete command-line interface (`src/commands/`) requiring `sudo` privileges to manage the gateway:
-- **`config`**: Manage system settings like port and log levels.
+- **`server`**: Manage the background proxy server lifecycle (`start`, `stop`, `status`).
+- **`config`**: Manage system settings like port, log levels, heartbeat intervals, and connection timeouts.
 - **`mcp`**: Discover online downstream servers and live tool configurations.
 - **`ai`**: Register AI clients, revoke keys, and manage granular RBAC permissions.
 - **`keychain`**: Securely store downstream API keys directly in the host OS's secure storage.
 - **`stdio-path`**: Resolves the absolute path of the compiled `stdio.js` script for local AI clients.
 
-### G. Built-in Middleware
-The core library provides out-of-the-box protection layers:
-- **RateLimitMiddleware**: Enforces Requests Per Minute (RPM) or Per Hour (RPH) limits via a "Token Bucket" algorithm. Optimized via zero-latency in-memory cache reads (`getConfig()`), reacting dynamically to `mcp-proxy-config.json` changes without disk I/O.
-- **DataMaskingMiddleware**: Uses RegEx-based interceptors to automatically filter out API Keys (e.g., `sk-...`), passwords, or PII from downstream tool results.
+### G. Built-in Plugins
+The core library provides out-of-the-box modular protection layers dynamically loaded via `PluginLoader`:
+- **RateLimitPlugin**: Enforces Requests Per Minute (RPM) or Per Hour (RPH) limits via a "Token Bucket" algorithm. Optimized via zero-latency in-memory cache reads (`getConfig()`), reacting dynamically to `mcp-proxy-config.json` changes without disk I/O.
+- **DataMaskingPlugin**: Uses RegEx-based interceptors to automatically filter out API Keys (e.g., `sk-...`), passwords, or PII from downstream tool results.
 
 ---
 
@@ -127,7 +129,7 @@ sequenceDiagram
     AI->>Core: CallTool(github_mcp___get_me)
     Core->>Core: Check Session Mapping (aiId natively bound)
     Core->>Core: Strip prefix -> github_mcp / get_me
-    Core->>Core: [Middleware] Execute RateLimitMiddleware (Memory Cache) check
+    Core->>Core: [Plugin] Execute RateLimitPlugin (Memory Store) check
     alt Rate Limit Exceeded
         Core-->>AI: Error: Rate limit exceeded
     else Check Passed
@@ -140,7 +142,7 @@ sequenceDiagram
             KV-->>Core: Raw Credentials (e.g. from macOS Keychain)
             Core->>MCP: Forward payload & args to downstream Tool
             MCP-->>Core: Tool Result
-            Core->>Core: [Middleware] Execute DataMaskingMiddleware on Result
+            Core->>Core: [Plugin] Execute DataMaskingPlugin on Result
             Core-->>AI: Masked & Filtered Result
         end
     end

@@ -6,11 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.0] - 2026-03-28
+### Plugin Ecosystem & Connection Pooling (aag-core v2.1.0)
+- **Changed**: Completely upgraded and adapted `ai_auth_gateway` to the newly released `@cyber-sec.space/aag-core` v2.1.0 SaaS Architecture.
+- **Architecture**: Migrated legacy hardcoded Gateway Middlewares into the new dynamic `PluginLoader` ecosystem, while implementing strict conditional loading to prevent dangerous double-execution scenarios.
+- **Added**: Enhanced connection pooling with configurable Scale-to-Zero heartbeat monitoring (`pingIntervalMs`, `pingTimeoutMs`, `reconnectTimeoutMs`) and idle suspension (`idleTimeoutMs`).
+- **Added**: Upgraded `aagcli config set` command to natively support configuring the new 2.1.0 system heartbeat parameters without manual JSON edits.
+- **Changed**: Renamed the background proxy management command namespace from `aagcli sse` to `aagcli server` to accurately reflect its broader proxy capabilities (SSE & HTTP multiplexing).
+- **Security**: Mitigated a High-Severity ReDoS (CVE-2026-4923) in the underlying Express routing engine by overriding the bundled `path-to-regexp` dependency to `v8.4.0`.
+- **Security**: Hardened the proxy endpoints by implementing `helmet` (API Security Defaults) and a Global IP Rate Limiter (`express-rate-limit`) to prevent DDoS and connection exhaustion before AI sessions are even validated.
+- **Performance**: Introduced a robust 300ms Debounce mechanism to `FileConfigStore`. This resolves a severe I/O thrashing bug where editor text-saves (`chokidar`) would rapidly trigger overlapping configuration reloads and race conditions.
+- **Performance**: Optimized the downstream Plugin Loader to natively cache the required built-in plugin dependencies upon configuration changes, completely removing the redundant `O(N)` fallback calculation bottleneck per-SSE connection.
+- **Fixed**: Corrected broken SSE connection URL parameter authentication parsing (`?aiid=...&key=...`), restoring seamless integration for GUI-based MCP clients like Cursor.
+- **Fixed**: Hardened `SessionManager` connection dropping logic to ensure all disconnected clients properly invoke their shutdown callback hooks (Memory Leak prevention).
+
 ## [1.0.10] - 2026-03-27
-### Architecture Update & Security Hardening
-- **Changed**: Completely adapted `ai_auth_gateway` to the newly released `@cyber-sec.space/aag-core@2.0.0` SaaS Architecture.
+### Security Hardening & Bug Fixes
 - **Security**: Hardened HTTP/SSE and STDIO connections by migrating from implicit global environment variables to strict runtime `ProxySessionOptions` mappings (`aiId`, `disableEnvFallback`). This ensures zero-contamination across scalable Multi-Tenant deployments.
-- **Fixed**: `aagcli mcp tools <serverId>` discovery issue. Upgraded the underlying mechanism to utilize the new v2.0.0 lazy `getClientJIT` (Just-In-Time) wakeup pattern instead of the legacy synchronous connector.
+- **Fixed**: `aagcli mcp tools <serverId>` discovery issue. Upgraded the underlying mechanism to utilize the new lazy `getClientJIT` (Just-In-Time) wakeup pattern instead of the legacy synchronous connector.
 - **Added**: Greatly enhanced NPM package discoverability by injecting relevant `mcp`, `llm`, and `proxy` SEO keywords directly into `package.json`.
 
 ## [1.0.8] - 2026-03-26

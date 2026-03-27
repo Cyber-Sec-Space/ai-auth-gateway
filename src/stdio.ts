@@ -1,7 +1,5 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { ClientManager, ProxyServer } from "@cyber-sec.space/aag-core/build/index.js";
-import { DataMaskingMiddleware } from "@cyber-sec.space/aag-core/build/middleware/dataMasking.js";
-import { RateLimitMiddleware } from "@cyber-sec.space/aag-core/build/middleware/rateLimit.js";
+import { ClientManager, ProxyServer, SessionManager, PluginLoader, RateLimitPlugin, DataMaskingPlugin } from "@cyber-sec.space/aag-core";
 import { FileConfigStore } from "./services/FileConfigStore.js";
 import { KeychainSecretStore } from "./services/KeychainSecretStore.js";
 import { ConsoleAuditLogger } from "./services/ConsoleAuditLogger.js";
@@ -40,12 +38,35 @@ async function main() {
   }
 
   const clientManager = new ClientManager(configStore, secretStore, logger);
+  const sessionManager = new SessionManager(configStore, logger);
   const proxy = new ProxyServer(clientManager, configStore, secretStore, logger, {
       aiId: aiId,
       disableEnvFallback: true
   });
-  proxy.use(new DataMaskingMiddleware([/sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], '***[MASKED]***'));
-  proxy.use(new RateLimitMiddleware(50, 60000, configStore));
+  // Initialize v2.1.0 Plugin Ecosystem
+  const configData = configStore.getConfig();
+  const plugins = configData?.plugins || [];
+  const pluginLoader = new PluginLoader(logger);
+  await pluginLoader.loadPlugins(proxy, configStore, plugins);
+
+  // Manually register built-in plugins as fallback if not defined in config
+  if (!plugins.find(p => p.name === "@cyber-sec.space/aag-core-data-masking")) {
+    await DataMaskingPlugin.register({
+      proxyServer: proxy,
+      configStore,
+      logger,
+      options: { rules: [/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, /sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], maskString: '***[MASKED]***' }
+    });
+  }
+  
+  if (!plugins.find(p => p.name === "@cyber-sec.space/aag-core-rate-limit")) {
+    await RateLimitPlugin.register({
+      proxyServer: proxy,
+      configStore,
+      logger,
+      options: { maxRequests: 50, windowMs: 60000 }
+    });
+  }
 
   await clientManager.syncConfig(initialConfig);
 
@@ -55,6 +76,13 @@ async function main() {
   });
 
   const transport = new StdioServerTransport();
+  
+  sessionManager.registerSession(aiId, () => {
+    console.error(`\n[Proxy] AI ID '${aiId}' has been revoked. Terminating active Stdio connection.`);
+    transport.close().catch(()=>{});
+    process.exit(1);
+  });
+
   await proxy.server.connect(transport);
   console.error("[Proxy] Stdio Server Transport initialized and connected successfully!");
 }

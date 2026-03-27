@@ -1,9 +1,31 @@
 {
   "system": {
     "port": 3000,
-    "logLevel": "INFO"
+    "logLevel": "INFO",
+    "pingIntervalMs": 60000,
+    "pingTimeoutMs": 10000,
+    "idleTimeoutMs": 300000,
+    "reconnectTimeoutMs": 5000
   },
   "masterKey": "your_securely_generated_64_character_hex_string",
+  "plugins": [
+    {
+      "name": "@cyber-sec.space/aag-core-rate-limit",
+      "options": {
+        "maxRequests": 50,
+        "windowMs": 60000
+      }
+    },
+    {
+      "name": "@cyber-sec.space/aag-core-data-masking",
+      "options": {
+        "rules": [
+          "(?i)(password|secret|token).{0,5}[:=].{0,5}['\"][^'\"]+['\"]"
+        ],
+        "maskString": "***[MASKED]***"
+      }
+    }
+  ],
   "mcpServers": {
     "local_database": {
       "transport": "stdio",

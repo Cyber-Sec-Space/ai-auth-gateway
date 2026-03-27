@@ -22,19 +22,19 @@ function isProcessRunning(pid: number): boolean {
 }
 
 export function registerDaemonCommands(program: Command) {
-  const sseCmd = program
-    .command("sse")
-    .description("Manage the background SSE Proxy daemon for external HTTP clients");
+  const serverCmd = program
+    .command("server")
+    .description("Manage the background Proxy Gateway daemon for external HTTP/SSE clients");
 
-  sseCmd
+  serverCmd
     .command("start")
-    .description("Start the AI Auth Gateway SSE daemon in the background")
+    .description("Start the AI Auth Gateway server in the background")
     .action(() => {
       if (fs.existsSync(PID_FILE)) {
         const pidStr = fs.readFileSync(PID_FILE, "utf-8").trim();
         const pid = parseInt(pidStr, 10);
         if (!isNaN(pid) && isProcessRunning(pid)) {
-          console.error(`❌ SSE Gateway is already running in the background (PID: ${pid}).`);
+          console.error(`❌ Gateway Server is already running in the background (PID: ${pid}).`);
           process.exit(1);
         } else {
           // PID file exists but process is dead
@@ -63,18 +63,18 @@ export function registerDaemonCommands(program: Command) {
       if (child.pid !== undefined && child.pid !== null) {
         fs.writeFileSync(PID_FILE, child.pid.toString());
         child.unref();
-        console.log(`🚀 SSE Gateway successfully started in the background (PID: ${child.pid}).`);
-        console.log(`📡 URL: http://localhost:[Port]/sse`);
+        console.log(`🚀 Gateway Server successfully started in the background (PID: ${child.pid}).`);
+        console.log(`📡 URL: http://localhost:[Port]/sse (or /message)`);
         console.log(`📂 Output log: ${outLog}`);
-        console.log(`📊 Check status with: aagcli sse status`);
+        console.log(`📊 Check status with: aagcli server status`);
       } else {
         console.error("❌ Failed to start the background process.");
       }
     });
 
-  sseCmd
+  serverCmd
     .command("stop")
-    .description("Stop the background SSE Gateway daemon")
+    .description("Stop the background Gateway server daemon")
     .action(() => {
       if (!fs.existsSync(PID_FILE)) {
         console.log("ℹ️  AI Auth Gateway is not running.");
@@ -93,7 +93,7 @@ export function registerDaemonCommands(program: Command) {
       if (isProcessRunning(pid)) {
         try {
           process.kill(pid, 15); // SIGTERM
-          console.log(`🛑 Stopped SSE Gateway process (PID: ${pid}).`);
+          console.log(`🛑 Stopped Gateway Server process (PID: ${pid}).`);
         } catch (e: any) {
           console.error(`❌ Failed to kill process ${pid}: ${e.message}`);
         }
@@ -104,12 +104,12 @@ export function registerDaemonCommands(program: Command) {
       fs.unlinkSync(PID_FILE);
     });
 
-  sseCmd
+  serverCmd
     .command("status")
-    .description("Check the status of the background SSE daemon")
+    .description("Check the status of the background proxy server daemon")
     .action(() => {
       if (!fs.existsSync(PID_FILE)) {
-        console.log("⚪ Status: INACTIVE (SSE Gateway is not running)");
+        console.log("⚪ Status: INACTIVE (Gateway Server is not running)");
         return;
       }
 

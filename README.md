@@ -15,7 +15,7 @@ The **AI Auth Gateway** is a Model Context Protocol (MCP) Proxy Server built wit
 - 🛡️ **Secure Secret Management**: Integrates with the OS Keychain (`keytar`) and AES-256-GCM to securely store and inject API Keys.
 - ⏳ **Smart Rate Limiting**: Built-in Token Bucket algorithm to set dynamic RPM (Requests Per Minute) limits per AI client, protecting your downstream API quotas.
 - 🎭 **Automatic Data Masking**: Automatically detects and masks API keys or sensitive information in downstream results, preventing leaks to the AI model.
-- 🔀 **Protocol Multiplexing**: Connects seamlessly over `stdio`, `sse`, or `http` to downstream servers.
+- 🔀 **Protocol Multiplexing**: Connects seamlessly over `stdio`, `sse`, or `http` to downstream servers with built-in connection pooling, idle timeouts, and automatic heartbeat monitoring.
 - 🔒 **Granular RBAC**: Control specifically which connected AI client can access which tools across which servers.
 - 📦 **Modular Core**: Built on top of the `@cyber-sec.space/aag-core` library. Fully dependency-injected for easy enterprise adoption (e.g. replacing Keytar with Hashicorp Vault).
 - 🕵️ **Auditing & Logging**: Masked and secured logs track AIID, connection times, and tool execution status (`logs/proxy.log`).
@@ -96,17 +96,17 @@ If your AI client supports native SSE URLs (like configuring via Cursor's GUI or
 
 To manage your Gateway configurations, permissions, and secrets, use the built-in CLI. **All CLI commands require `sudo` privileges.**
 
-### 1. Server Lifecycle Management (SSE Daemon)
-You can seamlessly run the SSE Proxy Gateway in the background without keeping a terminal open. This is only necessary if you aren't using the local `stdio` node launcher.
+### 1. Server Lifecycle Management (Proxy Daemon)
+You can seamlessly run the Proxy Gateway in the background without keeping a terminal open. This is only necessary if you aren't using the local `stdio` node launcher.
 ```bash
-# Start the SSE server in the background
-sudo aagcli sse start
+# Start the Gateway Server in the background
+sudo aagcli server start
 
 # Check if the server is running
-sudo aagcli sse status
+sudo aagcli server status
 
-# Stop the background SSE server safely
-sudo aagcli sse stop
+# Stop the background server safely
+sudo aagcli server stop
 ```
 
 ### 2. System Configuration
@@ -118,6 +118,10 @@ sudo aagcli config view
 # Change the proxy port (requires restart to apply)
 sudo aagcli config set port 8080
 sudo aagcli config set logLevel DEBUG
+
+# Configure Scale-to-Zero Connection Pooling timeouts (v2.1.0 feature)
+sudo aagcli config set pingIntervalMs 60000
+sudo aagcli config set idleTimeoutMs 300000
 ```
 
 ### 2. Keychain (Secret Vault) Management

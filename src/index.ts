@@ -1,9 +1,9 @@
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
 import cors from "cors";
-import { ClientManager, ProxyServer } from "@cyber-sec.space/aag-core";
-import { DataMaskingMiddleware } from "@cyber-sec.space/aag-core/build/middleware/dataMasking.js";
-import { RateLimitMiddleware } from "@cyber-sec.space/aag-core/build/middleware/rateLimit.js";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import { ClientManager, ProxyServer, SessionManager, PluginLoader, RateLimitPlugin, DataMaskingPlugin } from "@cyber-sec.space/aag-core";
 import { FileConfigStore } from "./services/FileConfigStore.js";
 import { KeychainSecretStore } from "./services/KeychainSecretStore.js";
 import { ConsoleAuditLogger } from "./services/ConsoleAuditLogger.js";
@@ -20,18 +20,45 @@ async function main() {
   const logger = new ConsoleAuditLogger();
 
   const clientManager = new ClientManager(configStore, secretStore, logger);
-  const proxy = new ProxyServer(clientManager, configStore, secretStore, logger);
-
+  const sessionManager = new SessionManager(configStore, logger);
   const initialConfig = configStore.load();
   await clientManager.syncConfig(initialConfig);
 
+  let hasDataMasking = false;
+  let hasRateLimit = false;
+
+  const updatePluginFlags = () => {
+    const plugins = configStore.getConfig()?.plugins || [];
+    hasDataMasking = plugins.some(p => p.name === "@cyber-sec.space/aag-core-data-masking");
+    hasRateLimit = plugins.some(p => p.name === "@cyber-sec.space/aag-core-rate-limit");
+  };
+
+  updatePluginFlags();
+
   configStore.watch();
   configStore.on("configChanged", async (newConfig) => {
+    updatePluginFlags();
     await clientManager.syncConfig(newConfig);
   });
 
   const app = express();
   app.disable("x-powered-by");
+
+  // 1. Core API Security Headers
+  app.use(helmet({
+    contentSecurityPolicy: false, // In case we eventually serve a GUI
+  }));
+
+  // 2. Global IP Rate Limiter to prevent brute force / connection exhaustion
+  const globalLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 1000, 
+    message: "Too many connections from this IP, please try again after a minute",
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use(globalLimiter);
+
   app.use(cors());
 
   const transports = new Map<string, SSEServerTransport>();
@@ -40,8 +67,8 @@ async function main() {
     logger.info("Proxy", "New SSE connection established");
     
     // aag-core v2.0.0 multi-tenant authentication extraction
-    const aiid = req.headers["x-ai-id"] as string;
-    const key = req.headers["x-ai-key"] as string;
+    const aiid = (req.headers["x-ai-id"] || req.query.aiid) as string;
+    const key = (req.headers["x-ai-key"] || req.query.key) as string;
 
     if (!aiid || !key) {
       logger.warn("Proxy", "SSE Authentication failed: Missing x-ai-id or x-ai-key headers");
@@ -62,16 +89,45 @@ async function main() {
     const transport = new SSEServerTransport(absoluteEndpoint, res);
     transports.set(transport.sessionId, transport);
 
+    const unregisterSession = sessionManager.registerSession(aiid, () => {
+      logger.info("Proxy", `Forcibly closing SSE session ${transport.sessionId} due to credential revocation.`);
+      transport.close().catch(()=>{});
+      res.end();
+    });
+
     // Bind authenticated SaaS identity safely into the proxy instance
     const sessionProxy = new ProxyServer(clientManager, configStore, secretStore, logger, {
         aiId: aiid,
         disableEnvFallback: true
     });
-    sessionProxy.use(new DataMaskingMiddleware([/sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], '***[MASKED]***'));
-    sessionProxy.use(new RateLimitMiddleware(50, 60000, configStore));
+    // Initialize v2.1.0 Plugin Ecosystem
+    const configData = configStore.getConfig();
+    const plugins = configData?.plugins || [];
+    const pluginLoader = new PluginLoader(logger);
+    await pluginLoader.loadPlugins(sessionProxy, configStore, plugins);
+
+    // Manually register built-in plugins as fallback if not defined in config
+    if (!hasDataMasking) {
+      await DataMaskingPlugin.register({
+        proxyServer: sessionProxy,
+        configStore,
+        logger,
+        options: { rules: [/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, /sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], maskString: '***[MASKED]***' }
+      });
+    }
+    
+    if (!hasRateLimit) {
+      await RateLimitPlugin.register({
+        proxyServer: sessionProxy,
+        configStore,
+        logger,
+        options: { maxRequests: 50, windowMs: 60000 }
+      });
+    }
     await sessionProxy.server.connect(transport);
 
     res.on("close", () => {
+      unregisterSession();
       logger.info("Proxy", `SSE connection closed (Session: ${transport.sessionId})`);
       transports.delete(transport.sessionId);
     });

@@ -13,7 +13,7 @@
 
 ## 專案特色
 - 🛡️ **安全憑證管理**: 結合作業系統原生金鑰圈 (`keytar`) 與 AES-256-GCM 加密技術，提供雙層防護安全儲存並注入 API 金鑰。
-- 🔀 **協定多路復用**: 支援 `stdio`、`sse` 與 `http` 多種通訊協定無縫連接下游伺服器。
+- 🔀 **協定多路復用**: 支援 `stdio`、`sse` 與 `http` 多種通訊協定無縫連接下游伺服器，並內建連線池 (Connection Pooling)、閒置超時與自動心跳監控 (Heartbeat)。
 - 🔒 **精細權限控制 (RBAC)**: 嚴格控管特定 AI 客戶端能存取哪些伺服器上的哪些特定 MCP 工具。
 - ⏳ **智慧限流 (Rate Limiting)**: 內建權杖桶演算法 (Token Bucket)，可針對每個 AI 客戶端設定動態的 RPM (每分鐘請求) 限制，保護下游 API 額度。
 - 🎭 **自動資料遮罩 (Data Masking)**: 自動偵測並遮罩下游回傳結果中的 API 金鑰或敏感資訊，防止洩漏給 AI 模型。
@@ -96,18 +96,18 @@ npm start
 
 為了方便管理 Gateway 的設定、權限與金鑰，系統內建了強大的 CLI 工具。**注意：所有的 CLI 指令皆須具備 `sudo` 管理員權限。**
 
-### 1. 背景伺服器生命週期管理 (SSE Daemon)
+### 1. 背景伺服器生命週期管理 (Proxy Daemon)
 若需要給外部 HTTP / 瀏覽器連線，您可以直接讓 Gateway 在背景常駐執行連線池，無需維持終端機開啟：
 （註：如透過 `stdio` 方式連線，則完全不需要啟動此背景程序）
 ```bash
-# 在背景啟動 SSE Proxy 伺服器
-sudo aagcli sse start
+# 在背景啟動 Gateway Proxy 伺服器
+sudo aagcli server start
 
 # 檢查背景伺服器運作狀態
-sudo aagcli sse status
+sudo aagcli server status
 
 # 安全地關閉背景伺服器
-sudo aagcli sse stop
+sudo aagcli server stop
 ```
 
 ### 2. 系統設定 (System Config)
@@ -119,6 +119,10 @@ sudo aagcli config view
 # 更改 Proxy 的連線埠 (將於下次伺服器啟動時生效)
 sudo aagcli config set port 8080
 sudo aagcli config set logLevel DEBUG
+
+# 配置 Scale-to-Zero 連線池與心跳超時機制 (v2.1.0 新功能)
+sudo aagcli config set pingIntervalMs 60000
+sudo aagcli config set idleTimeoutMs 300000
 ```
 
 ### 2. 金鑰金庫 (Keychain) 管理
