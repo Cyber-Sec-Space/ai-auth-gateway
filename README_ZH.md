@@ -96,18 +96,18 @@ npm start
 
 為了方便管理 Gateway 的設定、權限與金鑰，系統內建了強大的 CLI 工具。**注意：所有的 CLI 指令皆須具備 `sudo` 管理員權限。**
 
-### 1. 背景伺服器生命週期管理 (SSE Daemon)
+### 1. 背景伺服器生命週期管理 (Proxy Daemon)
 若需要給外部 HTTP / 瀏覽器連線，您可以直接讓 Gateway 在背景常駐執行連線池，無需維持終端機開啟：
 （註：如透過 `stdio` 方式連線，則完全不需要啟動此背景程序）
 ```bash
-# 在背景啟動 SSE Proxy 伺服器
-sudo aagcli sse start
+# 在背景啟動 Gateway Proxy 伺服器
+sudo aagcli server start
 
 # 檢查背景伺服器運作狀態
-sudo aagcli sse status
+sudo aagcli server status
 
 # 安全地關閉背景伺服器
-sudo aagcli sse stop
+sudo aagcli server stop
 ```
 
 ### 2. 系統設定 (System Config)

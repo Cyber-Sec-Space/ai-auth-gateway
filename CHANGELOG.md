@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Architecture**: Migrated legacy hardcoded Gateway Middlewares into the new dynamic `PluginLoader` ecosystem, while implementing strict conditional loading to prevent dangerous double-execution scenarios.
 - **Added**: Enhanced connection pooling with configurable Scale-to-Zero heartbeat monitoring (`pingIntervalMs`, `pingTimeoutMs`, `reconnectTimeoutMs`) and idle suspension (`idleTimeoutMs`).
 - **Added**: Upgraded `aagcli config set` command to natively support configuring the new 2.1.0 system heartbeat parameters without manual JSON edits.
+- **Changed**: Renamed the background proxy management command namespace from `aagcli sse` to `aagcli server` to accurately reflect its broader proxy capabilities (SSE & HTTP multiplexing).
 - **Fixed**: Corrected broken SSE connection URL parameter authentication parsing (`?aiid=...&key=...`), restoring seamless integration for GUI-based MCP clients like Cursor.
 - **Fixed**: Hardened `SessionManager` connection dropping logic to ensure all disconnected clients properly invoke their shutdown callback hooks (Memory Leak prevention).
 

@@ -77,6 +77,7 @@ The architecture is built as a **Monorepo** on top of the official `@modelcontex
 
 ### F. The CLI (`aagcli`)
 A complete command-line interface (`src/commands/`) requiring `sudo` privileges to manage the gateway:
+- **`server`**: Manage the background proxy server lifecycle (`start`, `stop`, `status`).
 - **`config`**: Manage system settings like port, log levels, heartbeat intervals, and connection timeouts.
 - **`mcp`**: Discover online downstream servers and live tool configurations.
 - **`ai`**: Register AI clients, revoke keys, and manage granular RBAC permissions.
