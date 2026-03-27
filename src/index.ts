@@ -37,8 +37,8 @@ async function main() {
     logger.info("Proxy", "New SSE connection established");
     
     // aag-core v2.0.0 multi-tenant authentication extraction
-    const aiid = req.headers["x-ai-id"] as string;
-    const key = req.headers["x-ai-key"] as string;
+    const aiid = (req.headers["x-ai-id"] || req.query.aiid) as string;
+    const key = (req.headers["x-ai-key"] || req.query.key) as string;
 
     if (!aiid || !key) {
       logger.warn("Proxy", "SSE Authentication failed: Missing x-ai-id or x-ai-key headers");
