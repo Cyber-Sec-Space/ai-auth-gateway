@@ -44,22 +44,29 @@ async function main() {
       disableEnvFallback: true
   });
   // Initialize v2.1.0 Plugin Ecosystem
+  const configData = configStore.getConfig();
+  const plugins = configData?.plugins || [];
   const pluginLoader = new PluginLoader(logger);
-  await pluginLoader.loadPlugins(proxy, configStore, configStore.getConfig()?.plugins || []);
+  await pluginLoader.loadPlugins(proxy, configStore, plugins);
 
-  // Manually register built-in plugins as fallback
-  await DataMaskingPlugin.register({
-    proxyServer: proxy,
-    configStore,
-    logger,
-    options: { rules: [/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, /sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], maskString: '***[MASKED]***' }
-  });
-  await RateLimitPlugin.register({
-    proxyServer: proxy,
-    configStore,
-    logger,
-    options: { maxRequests: 50, windowMs: 60000 }
-  });
+  // Manually register built-in plugins as fallback if not defined in config
+  if (!plugins.find(p => p.name === "@cyber-sec.space/aag-core-data-masking")) {
+    await DataMaskingPlugin.register({
+      proxyServer: proxy,
+      configStore,
+      logger,
+      options: { rules: [/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, /sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], maskString: '***[MASKED]***' }
+    });
+  }
+  
+  if (!plugins.find(p => p.name === "@cyber-sec.space/aag-core-rate-limit")) {
+    await RateLimitPlugin.register({
+      proxyServer: proxy,
+      configStore,
+      logger,
+      options: { maxRequests: 50, windowMs: 60000 }
+    });
+  }
 
   await clientManager.syncConfig(initialConfig);
 
