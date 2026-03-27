@@ -119,6 +119,10 @@ sudo aagcli config view
 # 更改 Proxy 的連線埠 (將於下次伺服器啟動時生效)
 sudo aagcli config set port 8080
 sudo aagcli config set logLevel DEBUG
+
+# 配置 Scale-to-Zero 連線池與心跳超時機制 (v2.1.0 新功能)
+sudo aagcli config set pingIntervalMs 60000
+sudo aagcli config set idleTimeoutMs 300000
 ```
 
 ### 2. 金鑰金庫 (Keychain) 管理

@@ -118,6 +118,10 @@ sudo aagcli config view
 # Change the proxy port (requires restart to apply)
 sudo aagcli config set port 8080
 sudo aagcli config set logLevel DEBUG
+
+# Configure Scale-to-Zero Connection Pooling timeouts (v2.1.0 feature)
+sudo aagcli config set pingIntervalMs 60000
+sudo aagcli config set idleTimeoutMs 300000
 ```
 
 ### 2. Keychain (Secret Vault) Management
