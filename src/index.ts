@@ -1,9 +1,7 @@
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
 import cors from "cors";
-import { ClientManager, ProxyServer } from "@cyber-sec.space/aag-core";
-import { DataMaskingMiddleware } from "@cyber-sec.space/aag-core/build/middleware/dataMasking.js";
-import { RateLimitMiddleware } from "@cyber-sec.space/aag-core/build/middleware/rateLimit.js";
+import { ClientManager, ProxyServer, SessionManager, PluginLoader, RateLimitPlugin, DataMaskingPlugin } from "@cyber-sec.space/aag-core";
 import { FileConfigStore } from "./services/FileConfigStore.js";
 import { KeychainSecretStore } from "./services/KeychainSecretStore.js";
 import { ConsoleAuditLogger } from "./services/ConsoleAuditLogger.js";
@@ -20,8 +18,7 @@ async function main() {
   const logger = new ConsoleAuditLogger();
 
   const clientManager = new ClientManager(configStore, secretStore, logger);
-  const proxy = new ProxyServer(clientManager, configStore, secretStore, logger);
-
+  const sessionManager = new SessionManager(configStore, logger);
   const initialConfig = configStore.load();
   await clientManager.syncConfig(initialConfig);
 
@@ -62,16 +59,38 @@ async function main() {
     const transport = new SSEServerTransport(absoluteEndpoint, res);
     transports.set(transport.sessionId, transport);
 
+    const unregisterSession = sessionManager.registerSession(aiid, () => {
+      logger.info("Proxy", `Forcibly closing SSE session ${transport.sessionId} due to credential revocation.`);
+      transport.close().catch(()=>{});
+      res.end();
+    });
+
     // Bind authenticated SaaS identity safely into the proxy instance
     const sessionProxy = new ProxyServer(clientManager, configStore, secretStore, logger, {
         aiId: aiid,
         disableEnvFallback: true
     });
-    sessionProxy.use(new DataMaskingMiddleware([/sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], '***[MASKED]***'));
-    sessionProxy.use(new RateLimitMiddleware(50, 60000, configStore));
+    // Initialize v2.1.0 Plugin Ecosystem
+    const pluginLoader = new PluginLoader(logger);
+    await pluginLoader.loadPlugins(sessionProxy, configStore, configStore.getConfig()?.plugins || []);
+
+    // Manually register built-in plugins as fallback
+    await DataMaskingPlugin.register({
+      proxyServer: sessionProxy,
+      configStore,
+      logger,
+      options: { rules: [/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, /sk-[a-zA-Z0-9]{32,}/g, /(password|secret|token).{0,5}[:=].{0,5}['"][^'"]+['"]/gi], maskString: '***[MASKED]***' }
+    });
+    await RateLimitPlugin.register({
+      proxyServer: sessionProxy,
+      configStore,
+      logger,
+      options: { maxRequests: 50, windowMs: 60000 }
+    });
     await sessionProxy.server.connect(transport);
 
     res.on("close", () => {
+      unregisterSession();
       logger.info("Proxy", `SSE connection closed (Session: ${transport.sessionId})`);
       transports.delete(transport.sessionId);
     });
