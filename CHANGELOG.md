@@ -6,12 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.1.0] - 2026-03-27
-### Architecture Update & Security Hardening
-- **Changed**: Completely adapted `ai_auth_gateway` to the newly released `@cyber-sec.space/aag-core` v2.1.0 SaaS Architecture.
+## [1.1.0] - 2026-03-28
+### Plugin Ecosystem & Connection Pooling (aag-core v2.1.0)
+- **Changed**: Completely upgraded and adapted `ai_auth_gateway` to the newly released `@cyber-sec.space/aag-core` v2.1.0 SaaS Architecture.
+- **Architecture**: Migrated legacy hardcoded Gateway Middlewares into the new dynamic `PluginLoader` ecosystem, while implementing strict conditional loading to prevent dangerous double-execution scenarios.
+- **Added**: Enhanced connection pooling with configurable Scale-to-Zero heartbeat monitoring (`pingIntervalMs`, `pingTimeoutMs`, `reconnectTimeoutMs`) and idle suspension (`idleTimeoutMs`).
+- **Added**: Upgraded `aagcli config set` command to natively support configuring the new 2.1.0 system heartbeat parameters without manual JSON edits.
+- **Fixed**: Corrected broken SSE connection URL parameter authentication parsing (`?aiid=...&key=...`), restoring seamless integration for GUI-based MCP clients like Cursor.
+- **Fixed**: Hardened `SessionManager` connection dropping logic to ensure all disconnected clients properly invoke their shutdown callback hooks (Memory Leak prevention).
+
+## [1.0.10] - 2026-03-27
+### Security Hardening & Bug Fixes
 - **Security**: Hardened HTTP/SSE and STDIO connections by migrating from implicit global environment variables to strict runtime `ProxySessionOptions` mappings (`aiId`, `disableEnvFallback`). This ensures zero-contamination across scalable Multi-Tenant deployments.
 - **Fixed**: `aagcli mcp tools <serverId>` discovery issue. Upgraded the underlying mechanism to utilize the new lazy `getClientJIT` (Just-In-Time) wakeup pattern instead of the legacy synchronous connector.
-- **Added**: Enhanced connection pooling with configurable heartbeat monitoring (`pingIntervalMs`, `pingTimeoutMs`) and idle suspension (`idleTimeoutMs`).
 - **Added**: Greatly enhanced NPM package discoverability by injecting relevant `mcp`, `llm`, and `proxy` SEO keywords directly into `package.json`.
 
 ## [1.0.8] - 2026-03-26
